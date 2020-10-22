@@ -71,6 +71,7 @@ fun main() {
 
 
 
+
     bus.consumer<RequestBillingCommand>("RequestBillingCommand") { messages ->
         billingService.on(messages.body())
 //    }
