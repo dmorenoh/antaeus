@@ -7,6 +7,8 @@ import io.pleo.antaeus.context.billing.event.BillingBatchProcessStartedEvent
 
 import io.pleo.antaeus.context.billing.exceptions.InvalidBillingTransactionException
 import io.pleo.antaeus.context.payment.InvoicePaymentService
+import io.pleo.antaeus.core.exceptions.BillingProcessNotFoundException
+import io.pleo.antaeus.core.exceptions.EntityNotFoundException
 
 import io.pleo.antaeus.core.messagebus.EventBus
 import io.pleo.antaeus.models.BillingBatchProcess
@@ -29,6 +31,7 @@ class BillingService(
     fun on(command: CompleteBillingBatchProcessCommand) {
 
         val billingProcess = billingDal.fetch(command.processId)
+                ?: throw BillingProcessNotFoundException(command.processId)
 
         invoicePaymentService.fetchByBillingProcessId(billingProcess.processId)
                 .none { it.status == PaymentStatus.STARTED }

@@ -43,7 +43,7 @@ class AntaeusDal(private val db: Database) {
     }
 
 
-    fun createBillingTransaction():BillingBatchProcess?{
+    fun createBillingProcess(): BillingBatchProcess? {
         val id = transaction(db) {
             // Insert the invoice and returns its new id.
             BillingTransactionTable
@@ -53,6 +53,19 @@ class AntaeusDal(private val db: Database) {
 
         return fetchBillingTransaction(id)
     }
+
+
+    fun updateBillingProcess(billingBatchProcess: BillingBatchProcess) {
+
+        transaction(db) {
+            // Insert the invoice and returns its new id.
+            BillingTransactionTable
+                    .update({ BillingTransactionTable.id eq billingBatchProcess.processId }) {
+                        it[this.status] = billingBatchProcess.status.name
+                    }
+        }
+    }
+
     fun createInvoice(amount: Money, customer: Customer, status: InvoiceStatus = InvoiceStatus.PENDING): Invoice? {
         val id = transaction(db) {
             // Insert the invoice and returns its new id.
@@ -84,9 +97,8 @@ class AntaeusDal(private val db: Database) {
         return fetchInvoice(id)
     }
 
-    fun updateInvoice(invoice: Invoice):
-            Invoice? {
-        val id = transaction(db) {
+    fun updateInvoice(invoice: Invoice) {
+        transaction(db) {
             // Insert the invoice and returns its new id.
             InvoiceTable
                     .update({ InvoiceTable.id eq invoice.id }) {
@@ -96,7 +108,7 @@ class AntaeusDal(private val db: Database) {
                         it[this.customerId] = invoice.customerId
                     }
         }
-        return fetchInvoice(id)
+
     }
 
     fun fetchCustomer(id: Int): Customer? {

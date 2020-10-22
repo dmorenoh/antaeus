@@ -43,6 +43,7 @@ class InvoicePaymentService(private val invoicePaymentDal: InvoicePaymentDal,
     }
 
     fun fetchByBillingProcessId(billingProcessId: Int): List<InvoicePaymentTransaction> {
+
         return emptyList()
     }
 }

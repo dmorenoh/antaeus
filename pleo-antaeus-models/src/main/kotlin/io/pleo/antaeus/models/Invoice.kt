@@ -17,4 +17,5 @@ data class Invoice(
     fun paid(): Invoice {
         return copy(status = InvoiceStatus.PAID)
     }
+
 }
