@@ -26,6 +26,7 @@ class InvoicePaymentService(private val invoicePaymentDal: InvoicePaymentDal,
                 invoicePayment.transactionId,
                 invoicePayment.invoiceId,
                 invoicePayment.billingProcessId))
+
     }
 
     fun on(command: CancelInvoicePaymentCommand) {
