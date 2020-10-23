@@ -6,16 +6,14 @@ import io.mockk.verify
 import io.pleo.antaeus.context.billing.command.CompleteBillingBatchProcessCommand
 import io.pleo.antaeus.context.billing.command.StartBillingBatchProcessCommand
 import io.pleo.antaeus.context.billing.dal.BillingDal
+import io.pleo.antaeus.context.billing.event.BillingBatchProcessFinishedEvent
 import io.pleo.antaeus.context.billing.event.BillingBatchProcessStartedEvent
 import io.pleo.antaeus.context.billing.exceptions.InvalidBillingTransactionException
-import io.pleo.antaeus.context.invoice.service.InvoiceService
 import io.pleo.antaeus.context.payment.InvoicePaymentService
-import io.pleo.antaeus.core.messagebus.CommandBus
 import io.pleo.antaeus.core.messagebus.EventBus
 import io.pleo.antaeus.models.*
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
-import java.math.BigDecimal
 
 class BillingServiceTest {
 
@@ -83,7 +81,10 @@ class BillingServiceTest {
         billingService.on(CompleteBillingBatchProcessCommand(PROCESS_ID))
 
         //then
-        verify(exactly = 0) { dal.update(ofType(BillingBatchProcess::class)) }
+        verify(exactly = 0) {
+            dal.update(ofType(BillingBatchProcess::class))
+            eventBus.publish(ofType(BillingBatchProcessFinishedEvent::class))
+        }
     }
 
     @Test
@@ -97,6 +98,9 @@ class BillingServiceTest {
         billingService.on(CompleteBillingBatchProcessCommand(PROCESS_ID))
 
         //then
-        verify(exactly = 1) { dal.update(BillingBatchProcess(PROCESS_ID,BillingStatus.COMPLETED)) }
+        verify(exactly = 1) {
+            dal.update(BillingBatchProcess(PROCESS_ID, BillingStatus.COMPLETED))
+            eventBus.publish(BillingBatchProcessFinishedEvent(PROCESS_ID))
+        }
     }
 }

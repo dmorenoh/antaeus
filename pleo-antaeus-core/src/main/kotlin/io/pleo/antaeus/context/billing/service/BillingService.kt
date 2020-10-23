@@ -3,6 +3,7 @@ package io.pleo.antaeus.context.billing.service
 import io.pleo.antaeus.context.billing.command.CompleteBillingBatchProcessCommand
 import io.pleo.antaeus.context.billing.command.StartBillingBatchProcessCommand
 import io.pleo.antaeus.context.billing.dal.BillingDal
+import io.pleo.antaeus.context.billing.event.BillingBatchProcessFinishedEvent
 import io.pleo.antaeus.context.billing.event.BillingBatchProcessStartedEvent
 
 import io.pleo.antaeus.context.billing.exceptions.InvalidBillingTransactionException
@@ -34,7 +35,12 @@ class BillingService(
                 ?: throw BillingProcessNotFoundException(command.processId)
 
         invoicePaymentService.fetchByBillingProcessId(billingProcess.processId)
-                .none { it.status == PaymentStatus.STARTED }
-                .let { billingDal.update(billingProcess.complete()) }
+                .filter { it.status == PaymentStatus.STARTED }
+                .ifEmpty {
+                    billingDal.update(billingProcess.complete())
+                    eventBus.publish(BillingBatchProcessFinishedEvent(billingProcess.processId))
+                }
+
+
     }
 }

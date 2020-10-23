@@ -59,7 +59,7 @@ fun main() {
     val paymentProvider = getPaymentProvider()
 
     // Create core services
-    val invoiceService = InvoiceService(dal = dal)
+//    val invoiceService = InvoiceService(dal = dal)
     val customerService = CustomerService(dal = dal)
 //    val paymentService = PaymentService(paymentProvider = paymentProvider)
     // This is _your_ billing service to be included where you see fit
@@ -72,14 +72,11 @@ fun main() {
 
 
 
-    bus.consumer<RequestBillingCommand>("RequestBillingCommand") { messages ->
-        billingService.on(messages.body())
-//    }
 
 
     // Create REST web service
-    AntaeusRest(
-            invoiceService = invoiceService,
-            customerService = customerService
-    ).run()
+//    AntaeusRest(
+//            invoiceService = invoiceService,
+//            customerService = customerService
+//    ).run()
 }
