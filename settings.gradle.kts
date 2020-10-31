@@ -6,5 +6,3 @@ include(
 "pleo-antaeus-core",
 "pleo-antaeus-data"
 )
-include("pleo-antaeus-infra")
-include("ann-rrr")
