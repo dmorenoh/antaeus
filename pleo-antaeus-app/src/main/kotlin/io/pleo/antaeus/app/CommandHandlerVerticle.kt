@@ -1,43 +1,43 @@
 package io.pleo.antaeus.app
 
-import io.pleo.antaeus.context.billing.command.CompleteBillingBatchProcessCommand
-import io.pleo.antaeus.context.billing.command.StartBillingBatchProcessCommand
-import io.pleo.antaeus.context.billing.service.BillingService
-import io.pleo.antaeus.context.invoice.command.PayInvoiceCommand
-import io.pleo.antaeus.context.invoice.service.InvoiceService
-import io.pleo.antaeus.context.payment.CancelInvoicePaymentCommand
-import io.pleo.antaeus.context.payment.CompleteInvoicePaymentCommand
-import io.pleo.antaeus.context.payment.InvoicePaymentService
-import io.pleo.antaeus.context.payment.RequestInvoicePaymentCommand
+import io.pleo.antaeus.context.billing.CompleteBillingCommand
+import io.pleo.antaeus.context.billing.StartBillingCommand
+import io.pleo.antaeus.context.billing.BillingCommandHandler
+import io.pleo.antaeus.context.invoice.PayInvoiceCommand
+import io.pleo.antaeus.context.invoice.InvoiceService
+import io.pleo.antaeus.context.payment.CancelPaymentCommand
+import io.pleo.antaeus.context.payment.CompletePaymentCommand
+import io.pleo.antaeus.context.payment.PaymentCommandHandler
+import io.pleo.antaeus.context.payment.RequestPaymentCommand
 import io.vertx.core.AbstractVerticle
 
 class CommandHandlerVerticle(private val invoiceService: InvoiceService,
-                             private val invoicePaymentService: InvoicePaymentService,
-                             private val billingService: BillingService) : AbstractVerticle() {
+                             private val paymentCommandHandler: PaymentCommandHandler,
+                             private val billingCommandHandler: BillingCommandHandler) : AbstractVerticle() {
 
     override fun start() {
         vertx.eventBus().consumer<PayInvoiceCommand>("RequestBillingCommand") {
             invoiceService.on(it.body())
         }
 
-        vertx.eventBus().consumer<RequestInvoicePaymentCommand>("RequestInvoicePaymentCommand") {
-            invoicePaymentService.on(it.body())
+        vertx.eventBus().consumer<RequestPaymentCommand>("RequestInvoicePaymentCommand") {
+            paymentCommandHandler.handle(it.body())
         }
 
-        vertx.eventBus().consumer<CompleteInvoicePaymentCommand>("CompleteInvoicePaymentCommand") {
-            invoicePaymentService.on(it.body())
+        vertx.eventBus().consumer<CompletePaymentCommand>("CompleteInvoicePaymentCommand") {
+            paymentCommandHandler.handle(it.body())
         }
 
-        vertx.eventBus().consumer<CancelInvoicePaymentCommand>("CancelInvoicePaymentCommand") {
-            invoicePaymentService.on(it.body())
+        vertx.eventBus().consumer<CancelPaymentCommand>("CancelInvoicePaymentCommand") {
+            paymentCommandHandler.handle(it.body())
         }
 
-        vertx.eventBus().consumer<StartBillingBatchProcessCommand>("StartBillingBatchProcessCommand") {
-            billingService.on(it.body())
+        vertx.eventBus().consumer<StartBillingCommand>("StartBillingBatchProcessCommand") {
+            billingCommandHandler.handle(it.body())
         }
 
-        vertx.eventBus().consumer<CompleteBillingBatchProcessCommand>("CompleteBillingBatchProcessCommand") {
-            billingService.on(it.body())
+        vertx.eventBus().consumer<CompleteBillingCommand>("CompleteBillingBatchProcessCommand") {
+            billingCommandHandler.handle(it.body())
         }
     }
 

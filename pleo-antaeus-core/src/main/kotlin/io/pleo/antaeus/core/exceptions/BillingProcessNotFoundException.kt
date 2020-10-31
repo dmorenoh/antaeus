@@ -1,3 +1,3 @@
 package io.pleo.antaeus.core.exceptions
 
-class BillingProcessNotFoundException(id: Int) : EntityNotFoundException("Batch Process", id)
+class BillingProcessNotFoundException(id: String) : RuntimeException("Batch Process '${id}' not found")

@@ -1,16 +1,18 @@
 package io.pleo.antaeus.models
 
-data class InvoicePaymentTransaction(val transactionId: String,
+import java.util.*
+
+data class InvoicePaymentTransaction(val transactionId: UUID,
                                      val invoiceId: Int,
                                      val status: PaymentStatus = PaymentStatus.STARTED,
-                                     val paymentFailureReason: PaymentFailureReason = PaymentFailureReason.NONE,
+                                     val cancellationReason: CancellationReason = CancellationReason.NONE,
                                      val billingProcessId: Int?) {
 
     fun complete(): InvoicePaymentTransaction {
         return copy(status = PaymentStatus.COMPLETED)
     }
 
-    fun canceled(paymentFailureReason: PaymentFailureReason): InvoicePaymentTransaction {
-        return copy(paymentFailureReason = paymentFailureReason, status = PaymentStatus.CANCELED)
+    fun canceled(cancellationReason: CancellationReason): InvoicePaymentTransaction {
+        return copy(cancellationReason = cancellationReason, status = PaymentStatus.CANCELED)
     }
 }

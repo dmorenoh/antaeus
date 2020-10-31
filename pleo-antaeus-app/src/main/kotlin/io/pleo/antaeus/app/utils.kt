@@ -1,5 +1,5 @@
 
-import io.pleo.antaeus.core.external.PaymentProvider
+import io.pleo.antaeus.context.payment.external.PaymentProvider
 import io.pleo.antaeus.data.AntaeusDal
 import io.pleo.antaeus.models.Currency
 import io.pleo.antaeus.models.Invoice

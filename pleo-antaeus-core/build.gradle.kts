@@ -4,7 +4,7 @@ plugins {
 
 kotlinProject()
 
-dependencies {
-    implementation(project(":pleo-antaeus-data"))
-    api(project(":pleo-antaeus-models"))
-}
+//dependencies {
+//    implementation(project(":pleo-antaeus-data"))
+//    api(project(":pleo-antaeus-models"))
+//}

@@ -1,24 +1,15 @@
-package io.pleo.antaeus.models
+package io.pleo.antaeus.context.invoice
 
-data class Invoice(
+import io.pleo.antaeus.context.payment.external.PaymentProvider
+import io.pleo.antaeus.core.exceptions.InvalidInvoiceStatusException
+import io.pleo.antaeus.core.value.Money
+
+class Invoice(
         val id: Int,
         val customerId: Int,
         val amount: Money,
-        val status: InvoiceStatus,
-        val version: Int
+        private val status: InvoiceStatus
 ) {
-    fun currency(): Currency {
-        return amount.currency
-    }
-
-    fun isPending(): Boolean {
-        return status == InvoiceStatus.PENDING
-    }
-
-    fun pay(): Invoice {
-        return copy(status = InvoiceStatus.PAID)
-    }
-
     fun pay(provider: PaymentProvider): Invoice {
         if (status == InvoiceStatus.PAID)
             throw InvalidInvoiceStatusException("Invalid")
@@ -27,5 +18,4 @@ data class Invoice(
         }
         return this
     }
-
 }

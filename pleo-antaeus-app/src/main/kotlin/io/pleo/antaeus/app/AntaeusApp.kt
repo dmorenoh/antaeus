@@ -8,9 +8,15 @@
 package io.pleo.antaeus.app
 
 import getPaymentProvider
-import io.pleo.antaeus.context.invoice.service.InvoiceService
-import io.pleo.antaeus.core.services.CustomerService
-import io.pleo.antaeus.context.payment.PaymentService
+import io.pleo.antaeus.data.BillingDalImpl
+import io.pleo.antaeus.context.billing.BillingCommandHandler
+import io.pleo.antaeus.data.InvoiceDalImpl
+import io.pleo.antaeus.context.invoice.InvoiceService
+import io.pleo.antaeus.data.InvoicePaymentDalImpl
+import io.pleo.antaeus.context.payment.PaymentCommandHandler
+import io.pleo.antaeus.context.customer.CustomerService
+import io.pleo.antaeus.core.messagebus.VertxCommandBus
+import io.pleo.antaeus.core.messagebus.VertxEventBus
 import io.pleo.antaeus.data.AntaeusDal
 import io.pleo.antaeus.data.CustomerTable
 import io.pleo.antaeus.data.InvoiceTable
@@ -55,28 +61,32 @@ fun main() {
     // Insert example data in the database.
     setupInitialData(dal = dal)
 
+    // setup dal
+    val invoiceDal = InvoiceDalImpl(dal)
+    val billingDal = BillingDalImpl(dal)
+    val invoicePaymentDal = InvoicePaymentDalImpl(dal)
+
     // Get third parties
     val paymentProvider = getPaymentProvider()
-
-    // Create core services
-//    val invoiceService = InvoiceService(dal = dal)
-    val customerService = CustomerService(dal = dal)
-//    val paymentService = PaymentService(paymentProvider = paymentProvider)
-    // This is _your_ billing service to be included where you see fit
-//    val billingService = BillingService(paymentService = paymentService, invoiceService = invoiceService)
 
     // Vertx is fun
     val vertx = Vertx.vertx()
     val bus = vertx.eventBus()
 
+    // message bus
+    val commandBus = VertxCommandBus(vertx.eventBus())
+    val eventBus = VertxEventBus(vertx.eventBus())
 
-
-
+    // Create core services
+    val invoicePaymentService = PaymentCommandHandler(invoicePaymentDal = invoicePaymentDal, eventBus = eventBus)
+    val invoiceService = InvoiceService(dal = invoiceDal, paymentProvider = paymentProvider, eventBus = eventBus)
+    val billingService = BillingCommandHandler(invoicePaymentService, billingDal, eventBus)
+    val customerService = CustomerService(dal = dal)
 
 
     // Create REST web service
-//    AntaeusRest(
-//            invoiceService = invoiceService,
-//            customerService = customerService
-//    ).run()
+    AntaeusRest(
+            invoiceService = invoiceService,
+            customerService = customerService
+    ).run()
 }

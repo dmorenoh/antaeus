@@ -13,6 +13,7 @@ object InvoiceTable : Table() {
     val value = decimal("value", 1000, 2)
     val customerId = reference("customer_id", CustomerTable.id)
     val status = text("status")
+    val version = integer("version")
 }
 
 object CustomerTable : Table() {
@@ -20,7 +21,15 @@ object CustomerTable : Table() {
     val currency = varchar("currency", 3)
 }
 
-object BillingTransactionTable:Table(){
+object BillingTransactionTable : Table() {
     val id = integer("id").autoIncrement().primaryKey()
-    val status = InvoiceTable.text("status")
+    val status = text("status")
+}
+
+object InvoicePaymentTransactionTable : Table() {
+    val id = uuid("id")
+    val invoiceId = reference("invoice_id", InvoiceTable.id)
+    val status = text("status")
+    val cancellationReason = text("cancellation_reason")
+    val billingProcessId = reference("billing_process_id", BillingTransactionTable.id).nullable()
 }
