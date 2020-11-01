@@ -17,6 +17,6 @@ class InvoiceService(private val repository: InvoiceRepository) {
     }
 
     fun fetch(id: Int): Invoice {
-        return repository.fetch(id) ?: throw InvoiceNotFoundException(id)
+        return repository.load(id) ?: throw InvoiceNotFoundException(id)
     }
 }

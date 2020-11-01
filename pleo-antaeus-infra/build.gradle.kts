@@ -5,7 +5,8 @@ plugins {
 kotlinProject()
 
 dataLibs()
+schedulerLibs()
 
 dependencies {
-    api(project(":pleo-antaeus-core"))
+    implementation(project(":pleo-antaeus-core"))
 }

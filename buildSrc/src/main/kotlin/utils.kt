@@ -40,3 +40,9 @@ fun Project.dataLibs() {
         "implementation"("org.xerial:sqlite-jdbc:3.30.1")
     }
 }
+
+fun Project.schedulerLibs(){
+    dependencies {
+        "compile"("org.quartz-scheduler:quartz:2.3.0")
+    }
+}

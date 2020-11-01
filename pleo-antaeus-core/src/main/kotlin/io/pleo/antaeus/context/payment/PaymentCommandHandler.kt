@@ -20,7 +20,7 @@ class PaymentCommandHandler(private val repository: PaymentRepository,
 
     fun handle(command: CompletePaymentCommand) {
 
-        val invoicePayment = repository.fetch(command.transactionId)
+        val invoicePayment = repository.load(command.transactionId)
                 ?: throw InvoicePaymentNotFoundException("Invoice Payment not found with Id:'${command.transactionId}'")
 
         repository.update(invoicePayment.complete())
@@ -34,7 +34,7 @@ class PaymentCommandHandler(private val repository: PaymentRepository,
 
     fun handle(command: CancelPaymentCommand) {
 
-        val invoicePayment = repository.fetch(command.transactionId)
+        val invoicePayment = repository.load(command.transactionId)
                 ?: throw InvoicePaymentNotFoundException("Invoice Payment not found with Id:'${command.transactionId}'")
 
         repository.update(invoicePayment.cancel(command.paymentCancellationReason))
@@ -47,8 +47,4 @@ class PaymentCommandHandler(private val repository: PaymentRepository,
 
     }
 
-    fun fetchByBillingProcessId(billingProcessId: Int): List<Payment> {
-
-        return repository.fetchByProcessId(billingProcessId)
-    }
 }

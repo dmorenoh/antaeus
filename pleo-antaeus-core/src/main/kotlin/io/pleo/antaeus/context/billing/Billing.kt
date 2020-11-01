@@ -4,7 +4,6 @@ import io.pleo.antaeus.context.payment.Payment
 import io.pleo.antaeus.context.payment.PaymentStatus
 import java.util.*
 
-
 data class Billing(val processId: UUID,
                    val status: BillingStatus = BillingStatus.STARTED,
                    val payments: List<Payment> = emptyList()

@@ -49,7 +49,7 @@ class PaymentCommandHandlerTest {
     fun `should fail when trying to complete payment already completed`() {
 
         //given
-        every { repository.fetch(TRANSACTION_ID) } returns
+        every { repository.load(TRANSACTION_ID) } returns
                 Payment(TRANSACTION_ID,
                         INVOICE_ID,
                         PaymentStatus.COMPLETED,
@@ -65,7 +65,7 @@ class PaymentCommandHandlerTest {
     fun `should fail when trying to complete payment already canceled`() {
 
         //given
-        every { repository.fetch(TRANSACTION_ID) } returns
+        every { repository.load(TRANSACTION_ID) } returns
                 Payment(TRANSACTION_ID,
                         INVOICE_ID,
                         PaymentStatus.CANCELED,
@@ -81,7 +81,7 @@ class PaymentCommandHandlerTest {
     @Test
     fun `should complete invoice payment transaction`() {
         //given
-        every { repository.fetch(TRANSACTION_ID) } returns
+        every { repository.load(TRANSACTION_ID) } returns
                 Payment(TRANSACTION_ID,
                         INVOICE_ID,
                         PaymentStatus.STARTED,
@@ -103,7 +103,7 @@ class PaymentCommandHandlerTest {
     fun `should fail when trying to cancel payment already completed`() {
 
         //given
-        every { repository.fetch(TRANSACTION_ID) } returns
+        every { repository.load(TRANSACTION_ID) } returns
                 Payment(TRANSACTION_ID,
                         INVOICE_ID,
                         PaymentStatus.COMPLETED,
@@ -119,7 +119,7 @@ class PaymentCommandHandlerTest {
     fun `should fail when trying to cancel payment already canceled`() {
 
         //given
-        every { repository.fetch(TRANSACTION_ID) } returns
+        every { repository.load(TRANSACTION_ID) } returns
                 Payment(TRANSACTION_ID,
                         INVOICE_ID,
                         PaymentStatus.CANCELED,
@@ -134,7 +134,7 @@ class PaymentCommandHandlerTest {
     @Test
     fun `should cancel invoice payment transaction`() {
         //given
-        every { repository.fetch(TRANSACTION_ID) } returns Payment(TRANSACTION_ID,
+        every { repository.load(TRANSACTION_ID) } returns Payment(TRANSACTION_ID,
                 INVOICE_ID, PaymentStatus.STARTED, PaymentCancellationReason.NONE, PROCESS_ID)
         //when
         commandHandler.handle(CancelPaymentCommand(TRANSACTION_ID, INVOICE_ID, PaymentCancellationReason.CUSTOMER_NOT_FOUND))

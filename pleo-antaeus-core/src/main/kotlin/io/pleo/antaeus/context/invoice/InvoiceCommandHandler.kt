@@ -8,7 +8,7 @@ class InvoiceCommandHandler(private val repository: InvoiceRepository,
                             private val paymentProvider: PaymentProvider,
                             private val eventBus: EventBus) {
 
-    fun on(command: PayInvoiceCommand) {
+    fun handle(command: PayInvoiceCommand) {
 
         val invoice = repository.load(command.invoiceId)
                 ?: throw InvoiceNotFoundException(id = command.invoiceId)

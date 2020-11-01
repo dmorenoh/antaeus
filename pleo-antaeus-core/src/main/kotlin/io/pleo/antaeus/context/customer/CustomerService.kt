@@ -13,6 +13,6 @@ class CustomerService(private val repository: CustomerRepository) {
     }
 
     fun fetch(id: Int): Customer {
-        return repository.fetch(id) ?: throw CustomerNotFoundException(id)
+        return repository.load(id) ?: throw CustomerNotFoundException(id)
     }
 }

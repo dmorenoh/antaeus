@@ -10,7 +10,7 @@ import org.junit.jupiter.api.assertThrows
 
 class CustomerServiceTest {
     private val repository = mockk<CustomerRepository> {
-        every { fetch(404) } returns null
+        every { load(404) } returns null
     }
 
     private val customerService = CustomerService(repository = repository)

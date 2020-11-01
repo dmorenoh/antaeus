@@ -5,12 +5,11 @@ import io.pleo.antaeus.context.payment.PaymentCanceledEvent
 import io.pleo.antaeus.context.payment.PaymentCompletedEvent
 import io.pleo.antaeus.context.payment.RequestPaymentCommand
 import io.pleo.antaeus.core.messagebus.CommandBus
-import java.util.*
 
 class BillingSaga(private val invoiceService: InvoiceService,
                   private val commandBus: CommandBus
 ) {
-    fun handle(event: BillingRequestedEvent) {
+    fun on(event: BillingRequestedEvent) {
 
         val pendingInvoices = invoiceService.fetchAllPending()
 
@@ -27,12 +26,12 @@ class BillingSaga(private val invoiceService: InvoiceService,
                 }
     }
 
-    fun handle(event: PaymentCanceledEvent) {
+    fun on(event: PaymentCanceledEvent) {
         event.billingProcessId
                 ?.let { commandBus.send(CompleteBillingCommand(event.billingProcessId!!)) }
     }
 
-    fun handle(event: PaymentCompletedEvent) {
+    fun on(event: PaymentCompletedEvent) {
         event.billingProcessId
                 ?.let { commandBus.send(CompleteBillingCommand(event.billingProcessId!!)) }
     }

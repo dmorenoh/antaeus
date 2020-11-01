@@ -1,10 +1,10 @@
-
+import io.pleo.antaeus.context.invoice.Invoice
+import io.pleo.antaeus.context.invoice.InvoiceStatus
 import io.pleo.antaeus.context.payment.external.PaymentProvider
+import io.pleo.antaeus.core.value.Currency
+import io.pleo.antaeus.core.value.Money
 import io.pleo.antaeus.data.AntaeusDal
-import io.pleo.antaeus.models.Currency
-import io.pleo.antaeus.models.Invoice
-import io.pleo.antaeus.models.InvoiceStatus
-import io.pleo.antaeus.models.Money
+
 import java.math.BigDecimal
 import kotlin.random.Random
 
@@ -12,19 +12,19 @@ import kotlin.random.Random
 internal fun setupInitialData(dal: AntaeusDal) {
     val customers = (1..100).mapNotNull {
         dal.createCustomer(
-            currency = Currency.values()[Random.nextInt(0, Currency.values().size)]
+                currency = Currency.values()[Random.nextInt(0, Currency.values().size)]
         )
     }
 
     customers.forEach { customer ->
         (1..10).forEach {
             dal.createInvoice(
-                amount = Money(
-                    value = BigDecimal(Random.nextDouble(10.0, 500.0)),
-                    currency = customer.currency
-                ),
-                customer = customer,
-                status = if (it == 1) InvoiceStatus.PENDING else InvoiceStatus.PAID
+                    amount = Money(
+                            value = BigDecimal(Random.nextDouble(10.0, 500.0)),
+                            currency = customer.currency
+                    ),
+                    customer = customer,
+                    status = if (it == 1) InvoiceStatus.PENDING else InvoiceStatus.PAID
             )
         }
     }
@@ -34,7 +34,8 @@ internal fun setupInitialData(dal: AntaeusDal) {
 internal fun getPaymentProvider(): PaymentProvider {
     return object : PaymentProvider {
         override fun charge(invoice: Invoice): Boolean {
-                return Random.nextBoolean()
+            return Random.nextBoolean()
         }
+
     }
 }

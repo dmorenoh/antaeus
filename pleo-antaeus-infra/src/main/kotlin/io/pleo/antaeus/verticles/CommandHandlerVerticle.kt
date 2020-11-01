@@ -1,23 +1,23 @@
-package io.pleo.antaeus.app
+package io.pleo.antaeus.verticles
 
+import io.pleo.antaeus.context.billing.BillingCommandHandler
 import io.pleo.antaeus.context.billing.CompleteBillingCommand
 import io.pleo.antaeus.context.billing.StartBillingCommand
-import io.pleo.antaeus.context.billing.BillingCommandHandler
+import io.pleo.antaeus.context.invoice.InvoiceCommandHandler
 import io.pleo.antaeus.context.invoice.PayInvoiceCommand
-import io.pleo.antaeus.context.invoice.InvoiceService
 import io.pleo.antaeus.context.payment.CancelPaymentCommand
 import io.pleo.antaeus.context.payment.CompletePaymentCommand
 import io.pleo.antaeus.context.payment.PaymentCommandHandler
 import io.pleo.antaeus.context.payment.RequestPaymentCommand
 import io.vertx.core.AbstractVerticle
 
-class CommandHandlerVerticle(private val invoiceService: InvoiceService,
+class CommandHandlerVerticle(private val invoiceCommandHandler: InvoiceCommandHandler,
                              private val paymentCommandHandler: PaymentCommandHandler,
                              private val billingCommandHandler: BillingCommandHandler) : AbstractVerticle() {
 
     override fun start() {
         vertx.eventBus().consumer<PayInvoiceCommand>("RequestBillingCommand") {
-            invoiceService.on(it.body())
+            invoiceCommandHandler.handle(it.body())
         }
 
         vertx.eventBus().consumer<RequestPaymentCommand>("RequestInvoicePaymentCommand") {
@@ -41,7 +41,4 @@ class CommandHandlerVerticle(private val invoiceService: InvoiceService,
         }
     }
 
-    // Optional - called when verticle is undeployed
-    override fun stop() {
-    }
 }

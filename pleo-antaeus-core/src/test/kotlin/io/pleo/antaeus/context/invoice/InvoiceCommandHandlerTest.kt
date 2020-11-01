@@ -32,12 +32,12 @@ class InvoiceCommandHandlerTest {
     @Test
     fun `should fail when invoice is paid`() {
         //given
-        val existingInvoice = Invoice(INVOICE_ID, CUSTOMER_ID, TEN_EUROS, InvoiceStatus.PAID)
+        val existingInvoice = Invoice(INVOICE_ID, CUSTOMER_ID, TEN_EUROS, InvoiceStatus.PAID,1)
         every { repository.load(INVOICE_ID) } returns existingInvoice
 
 
         assertThrows<InvalidInvoiceStatusException> {
-            commandHandler.on(PayInvoiceCommand(TRANSACTION_ID, INVOICE_ID))
+            commandHandler.handle(PayInvoiceCommand(TRANSACTION_ID, INVOICE_ID))
         }
 
         verify (exactly = 0) { paymentProvider.charge(any()) }
@@ -46,48 +46,48 @@ class InvoiceCommandHandlerTest {
     @Test
     fun `should fail when payment provider fails`() {
         //given
-        val existingInvoice = Invoice(INVOICE_ID, CUSTOMER_ID, TEN_EUROS, InvoiceStatus.PENDING)
+        val existingInvoice = Invoice(INVOICE_ID, CUSTOMER_ID, TEN_EUROS, InvoiceStatus.PENDING,1)
         every { repository.load(INVOICE_ID) } returns existingInvoice
         every { paymentProvider.charge(existingInvoice) } returns false
 
         assertThrows<AccountBalanceException> {
-            commandHandler.on(PayInvoiceCommand(TRANSACTION_ID, INVOICE_ID))
+            commandHandler.handle(PayInvoiceCommand(TRANSACTION_ID, INVOICE_ID))
         }
     }
 
     @Test
     fun `should fail when payment provider fails due to customer not found`() {
         //given
-        val existingInvoice = Invoice(INVOICE_ID, CUSTOMER_ID, TEN_EUROS, InvoiceStatus.PENDING)
+        val existingInvoice = Invoice(INVOICE_ID, CUSTOMER_ID, TEN_EUROS, InvoiceStatus.PENDING,1)
         every { repository.load(INVOICE_ID) } returns existingInvoice
         every { paymentProvider.charge(existingInvoice) } throws CustomerNotFoundException(1111)
 
         assertThrows<CustomerNotFoundException> {
-            commandHandler.on(PayInvoiceCommand(TRANSACTION_ID, INVOICE_ID))
+            commandHandler.handle(PayInvoiceCommand(TRANSACTION_ID, INVOICE_ID))
         }
     }
 
     @Test
     fun `should fail when payment provider fails due to currency mismatch`() {
         //given
-        val existingInvoice = Invoice(INVOICE_ID, CUSTOMER_ID, TEN_EUROS, InvoiceStatus.PENDING)
+        val existingInvoice = Invoice(INVOICE_ID, CUSTOMER_ID, TEN_EUROS, InvoiceStatus.PENDING,1)
         every { repository.load(INVOICE_ID) } returns existingInvoice
         every { paymentProvider.charge(existingInvoice) } throws CurrencyMismatchException(1111, INVOICE_ID)
 
         assertThrows<CurrencyMismatchException> {
-            commandHandler.on(PayInvoiceCommand(TRANSACTION_ID, INVOICE_ID))
+            commandHandler.handle(PayInvoiceCommand(TRANSACTION_ID, INVOICE_ID))
         }
     }
 
     @Test
     fun `should fail when payment provider fails due to network error`() {
         //given
-        val existingInvoice = Invoice(INVOICE_ID, CUSTOMER_ID, TEN_EUROS, InvoiceStatus.PENDING)
+        val existingInvoice = Invoice(INVOICE_ID, CUSTOMER_ID, TEN_EUROS, InvoiceStatus.PENDING,1)
         every { repository.load(INVOICE_ID) } returns existingInvoice
         every { paymentProvider.charge(existingInvoice) } throws NetworkException()
 
         assertThrows<NetworkException> {
-            commandHandler.on(PayInvoiceCommand(TRANSACTION_ID, INVOICE_ID))
+            commandHandler.handle(PayInvoiceCommand(TRANSACTION_ID, INVOICE_ID))
         }
     }
 

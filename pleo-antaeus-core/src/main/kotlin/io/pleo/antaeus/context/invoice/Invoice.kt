@@ -8,7 +8,8 @@ class Invoice(
         val id: Int,
         val customerId: Int,
         val amount: Money,
-        private val status: InvoiceStatus
+        val status: InvoiceStatus,
+        val version: Int
 ) {
     fun pay(provider: PaymentProvider): Invoice {
         if (status == InvoiceStatus.PAID)

@@ -3,9 +3,9 @@ package io.pleo.antaeus.context.billing.service
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
+import io.pleo.antaeus.context.billing.BillingRequestedEvent
 import io.pleo.antaeus.context.billing.BillingSaga
 import io.pleo.antaeus.context.billing.CompleteBillingCommand
-import io.pleo.antaeus.context.billing.BillingRequestedEvent
 import io.pleo.antaeus.context.invoice.Invoice
 import io.pleo.antaeus.context.invoice.InvoiceService
 import io.pleo.antaeus.context.invoice.InvoiceStatus
@@ -33,7 +33,7 @@ class BillingSagaTest {
         //given
         every { invoiceService.fetchAllPending() } returns emptyList()
         //when
-        billingSagaService.handle(BillingRequestedEvent(PROCESS_ID))
+        billingSagaService.on(BillingRequestedEvent(PROCESS_ID))
 
         //then
         verify { commandBus.send(CompleteBillingCommand(PROCESS_ID)) }
@@ -43,12 +43,12 @@ class BillingSagaTest {
     @Test
     fun `should request invoice payment for evert pending invoice`() {
         //given
-        val invoice1 = Invoice(1, 2, TEN_EURO, InvoiceStatus.PENDING)
-        val invoice2 = Invoice(2, 3, TEN_EURO, InvoiceStatus.PENDING)
+        val invoice1 = Invoice(1, 2, TEN_EURO, InvoiceStatus.PENDING, 1)
+        val invoice2 = Invoice(2, 3, TEN_EURO, InvoiceStatus.PENDING, 1)
         every { invoiceService.fetchAllPending() } returns listOf(invoice1, invoice2)
 
         //when
-        billingSagaService.handle(BillingRequestedEvent(PROCESS_ID))
+        billingSagaService.on(BillingRequestedEvent(PROCESS_ID))
 
         //then
 //        val slot = slot<RequestPaymentCommand>()
