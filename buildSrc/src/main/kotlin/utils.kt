@@ -1,4 +1,3 @@
-
 import org.gradle.api.Project
 import org.gradle.kotlin.dsl.dependencies
 import org.gradle.kotlin.dsl.kotlin
@@ -12,7 +11,7 @@ fun Project.kotlinProject() {
     dependencies {
         // Kotlin libs
         "implementation"(kotlin("stdlib"))
-
+        "implementation"("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.4.1")
         // Logging
         "implementation"("org.slf4j:slf4j-simple:1.7.30")
         "implementation"("io.github.microutils:kotlin-logging:1.7.8")
@@ -27,6 +26,9 @@ fun Project.kotlinProject() {
 
         // Vertx
         "implementation"("io.vertx:vertx-core:3.9.3")
+        "implementation"("io.vertx:vertx-lang-kotlin-coroutines:3.9.3")
+        "compile"("io.vertx:vertx-circuit-breaker:3.9.4")
+        "testImplementation"("io.vertx:vertx-junit5:3.9.3")
 
     }
 }
@@ -41,7 +43,7 @@ fun Project.dataLibs() {
     }
 }
 
-fun Project.schedulerLibs(){
+fun Project.schedulerLibs() {
     dependencies {
         "compile"("org.quartz-scheduler:quartz:2.3.0")
     }

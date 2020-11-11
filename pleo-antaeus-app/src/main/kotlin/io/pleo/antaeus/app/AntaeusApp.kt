@@ -7,27 +7,25 @@
 
 package io.pleo.antaeus.app
 
+import getCurrencyExchangeProvider
 import getPaymentProvider
 import io.pleo.antaeus.context.billing.BillingCommandHandler
-import io.pleo.antaeus.context.billing.BillingSaga
 import io.pleo.antaeus.context.customer.CustomerService
-import io.pleo.antaeus.context.invoice.InvoiceCommandHandler
+import io.pleo.antaeus.context.invoice.InvoiceCommandHandlerOld
 import io.pleo.antaeus.context.invoice.InvoiceService
 import io.pleo.antaeus.context.payment.PaymentCommandHandler
-import io.pleo.antaeus.context.payment.PaymentSaga
 import io.pleo.antaeus.core.messagebus.VertxCommandBus
 import io.pleo.antaeus.core.messagebus.VertxEventBus
 import io.pleo.antaeus.data.AntaeusDal
 import io.pleo.antaeus.model.CustomerTable
 import io.pleo.antaeus.model.InvoiceTable
-import io.pleo.antaeus.repository.ExposedBillingRepository
+
 import io.pleo.antaeus.repository.ExposedCustomerRepository
 import io.pleo.antaeus.repository.ExposedInvoiceRepository
-import io.pleo.antaeus.repository.ExposedPaymentRepository
+import io.pleo.antaeus.repository.InMemoryBillingRepository
+import io.pleo.antaeus.repository.InMemoryPaymentRepository
+
 import io.pleo.antaeus.rest.AntaeusRest
-import io.pleo.antaeus.verticles.CommandHandlerVerticle
-import io.pleo.antaeus.verticles.EventHandlerVerticle
-import io.pleo.antaeus.verticles.QuarzVerticle
 import io.vertx.core.Vertx
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.SchemaUtils
@@ -35,7 +33,6 @@ import org.jetbrains.exposed.sql.StdOutSqlLogger
 import org.jetbrains.exposed.sql.addLogger
 import org.jetbrains.exposed.sql.transactions.TransactionManager
 import org.jetbrains.exposed.sql.transactions.transaction
-import org.quartz.JobKey
 import org.quartz.impl.StdSchedulerFactory
 import setupInitialData
 import java.io.File
@@ -45,7 +42,7 @@ fun main() {
     // The tables to create in the database.
     val tables = arrayOf(InvoiceTable, CustomerTable)
 
-    val dbFile: File = File.createTempFile("antaeus-db", ".sqlite")
+    val dbFile: File = File.createTempFile("antaeus-db", ".2")
     // Connect to the database and create the needed tables. Drop any existing data.
     val db = Database
             .connect(url = "jdbc:sqlite:${dbFile.absolutePath}",
@@ -70,15 +67,18 @@ fun main() {
     // Insert example data in the database.
     setupInitialData(dal = dal)
 
+    val vertx = Vertx.vertx()
+
     // setup repo
     val invoiceRepository = ExposedInvoiceRepository(db)
-    val paymentRepository = ExposedPaymentRepository(db)
-    val billingRepository = ExposedBillingRepository(db)
+    val paymentRepository = InMemoryPaymentRepository()
+    val billingRepository = InMemoryBillingRepository()
     val customerRepository = ExposedCustomerRepository(db)
     // Get third parties
     val paymentProvider = getPaymentProvider()
+    val currencyExchangeProvider = getCurrencyExchangeProvider()
 
-    val vertx = Vertx.vertx()
+
     // message bus
     val commandBus = VertxCommandBus(vertx.eventBus())
     val eventBus = VertxEventBus(vertx.eventBus())
@@ -91,24 +91,22 @@ fun main() {
     val paymentCommandHandler = PaymentCommandHandler(
             repository = paymentRepository,
             eventBus = eventBus)
-    val invoiceCommandHandler = InvoiceCommandHandler(
+    val invoiceCommandHandler = InvoiceCommandHandlerOld(
             repository = invoiceRepository,
             paymentProvider = paymentProvider,
+            currencyExchangeProvider = currencyExchangeProvider,
             eventBus = eventBus)
     val billingCommandHandler = BillingCommandHandler(
             repository = billingRepository,
             eventBus = eventBus)
 
-    val billingSaga = BillingSaga(invoiceService = invoiceService, commandBus = commandBus)
-    val paymentSaga = PaymentSaga(commandBus = commandBus)
+
 
     //Billing scheduler
     val scheduler = StdSchedulerFactory.getDefaultScheduler();
     scheduler.start();
 
-    vertx.deployVerticle(CommandHandlerVerticle(invoiceCommandHandler, paymentCommandHandler, billingCommandHandler))
-    vertx.deployVerticle(EventHandlerVerticle(billingSaga = billingSaga, paymentSaga = paymentSaga))
-    vertx.deployVerticle(QuarzVerticle(scheduler, JobKey("Billing Job"), "0 0 0 1 1/1 ? *"))
+
 
     // Create REST web service
     AntaeusRest(

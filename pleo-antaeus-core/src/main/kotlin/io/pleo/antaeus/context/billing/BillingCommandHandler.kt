@@ -1,32 +1,31 @@
 package io.pleo.antaeus.context.billing
 
-import io.pleo.antaeus.core.exceptions.BillingProcessNotFoundException
-
 import io.pleo.antaeus.core.messagebus.EventBus
 import mu.KotlinLogging
 
+private val logger = KotlinLogging.logger {}
 class BillingCommandHandler(private val repository: BillingRepository,
                             private val eventBus: EventBus) {
 
     private val logger = KotlinLogging.logger {}
 
     fun handle(command: StartBillingCommand) {
-        val billing = repository.save(Billing.create(command.processId))
-                ?: throw InvalidBillingTransactionException("no possible to be created")
-
-        eventBus.publish(BillingRequestedEvent(billing.processId))
+        repository.save(Billing.create(command))
+                ?.let { billing ->
+                    eventBus.publish(BillingRequestedEvent(billing.processId, billing.invoices.values.map { it.invoiceId }))
+                }
     }
 
-    fun handle(command: CompleteBillingCommand) {
-
-        val billingProcess = repository.load(command.processId)
-                ?: throw BillingProcessNotFoundException(command.processId.toString())
-
-        try {
-            repository.update(billingProcess.complete())
-            eventBus.publish(BillingCompletedEvent(billingProcess.processId))
-        } catch (e: BillingPendingPaymentsException) {
-            logger.info { "Billing has still pending payments to be processed" }
-        }
+    fun handle(command: CloseBillingInvoiceCommand) {
+        logger.info { "Closing billing invoice for invoice:${command.invoicesId} and billing ${command.processId}" }
+        repository.load(command.processId)
+                ?.let { billing ->
+                    billing.closeInvoice(command.invoicesId)
+                            .takeIf { it.status == BillingStatus.COMPLETED }
+                            ?.apply {
+                                eventBus.publish(BillingCompletedEvent(billing.processId))
+                            }
+                }
     }
+
 }

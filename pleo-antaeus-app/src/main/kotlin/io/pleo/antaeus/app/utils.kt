@@ -1,5 +1,7 @@
 import io.pleo.antaeus.context.invoice.Invoice
 import io.pleo.antaeus.context.invoice.InvoiceStatus
+import io.pleo.antaeus.context.payment.external.CurrencyExchangeProvider
+import io.pleo.antaeus.context.payment.external.MoneyExchangeRequest
 import io.pleo.antaeus.context.payment.external.PaymentProvider
 import io.pleo.antaeus.core.value.Currency
 import io.pleo.antaeus.core.value.Money
@@ -39,3 +41,14 @@ internal fun getPaymentProvider(): PaymentProvider {
 
     }
 }
+
+internal fun getCurrencyExchangeProvider(): CurrencyExchangeProvider {
+    return object : CurrencyExchangeProvider {
+        override fun convert(request: MoneyExchangeRequest): Money {
+            return Money(request.originAmount.value, request.finalCurrency)
+        }
+
+    }
+}
+
+

@@ -3,9 +3,9 @@ package io.pleo.antaeus.context.payment
 import io.pleo.antaeus.core.event.Event
 import java.util.*
 
-data class PaymentRequestedEvent(var transactionId: UUID,
-                                 var invoiceId: Int,
-                                 var billingProcessId: UUID? = null) : Event
+data class PaymentCreatedEvent(var transactionId: UUID,
+                               var invoiceId: Int,
+                               var billingProcessId: UUID? = null) : Event
 
 data class PaymentCompletedEvent(var transactionId: UUID,
                                  var invoiceId: Int,
@@ -15,4 +15,5 @@ data class PaymentCanceledEvent(var transactionId: UUID,
                                 var invoiceId: Int,
                                 var paymentCancellationReason: PaymentCancellationReason,
                                 var billingProcessId: UUID?) : Event
+
 

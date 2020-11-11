@@ -3,7 +3,7 @@ package io.pleo.antaeus.context.billing
 import java.util.*
 
 interface BillingRepository {
-    fun save(billingBatch: Billing):Billing?
-    fun update(billingBatch: Billing)
+    fun save(billing: Billing):Billing?
+    fun update(billing: Billing)
     fun load(processId:UUID): Billing?
 }

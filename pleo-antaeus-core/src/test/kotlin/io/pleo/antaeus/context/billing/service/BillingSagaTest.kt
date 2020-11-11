@@ -9,7 +9,7 @@ import io.pleo.antaeus.context.billing.CompleteBillingCommand
 import io.pleo.antaeus.context.invoice.Invoice
 import io.pleo.antaeus.context.invoice.InvoiceService
 import io.pleo.antaeus.context.invoice.InvoiceStatus
-import io.pleo.antaeus.context.payment.RequestPaymentCommand
+import io.pleo.antaeus.context.payment.CreatePaymentCommand
 import io.pleo.antaeus.core.messagebus.CommandBus
 import io.pleo.antaeus.core.value.Currency
 import io.pleo.antaeus.core.value.Money
@@ -37,7 +37,7 @@ class BillingSagaTest {
 
         //then
         verify { commandBus.send(CompleteBillingCommand(PROCESS_ID)) }
-        verify(exactly = 0) { commandBus.send(ofType(RequestPaymentCommand::class)) }
+        verify(exactly = 0) { commandBus.send(ofType(CreatePaymentCommand::class)) }
     }
 
     @Test
@@ -54,7 +54,7 @@ class BillingSagaTest {
 //        val slot = slot<RequestPaymentCommand>()
         verify(exactly = 0) { commandBus.send(ofType(CompleteBillingCommand::class)) }
         verify(exactly = 2) {
-            commandBus.send(ofType(RequestPaymentCommand::class))
+            commandBus.send(ofType(CreatePaymentCommand::class))
         }
 
     }

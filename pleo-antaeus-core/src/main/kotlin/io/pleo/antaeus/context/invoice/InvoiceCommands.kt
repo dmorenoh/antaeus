@@ -4,3 +4,4 @@ import io.pleo.antaeus.core.commands.Command
 import java.util.*
 
 data class PayInvoiceCommand(val transactionId: UUID, val invoiceId: Int) : Command
+data class FixCurrencyInvoiceCommand(val invoiceId: Int) : Command

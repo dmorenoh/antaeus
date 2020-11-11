@@ -32,11 +32,11 @@ class PaymentCommandHandlerTest {
             repository.save(payment = capture(slot))
         } returns payment
         //when
-        commandHandler.handle(RequestPaymentCommand(INVOICE_ID, PROCESS_ID))
+        commandHandler.handle(CreatePaymentCommand(INVOICE_ID, PROCESS_ID))
         //then
 
         verify {
-            eventBus.publish(PaymentRequestedEvent(payment.transactionId, payment.invoiceId, payment.billingProcessId))
+            eventBus.publish(PaymentCreatedEvent(payment.transactionId, payment.invoiceId, payment.billingProcessId))
         }
         assertNotNull(slot.captured.transactionId)
         assertEquals(slot.captured.invoiceId, INVOICE_ID)
