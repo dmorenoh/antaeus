@@ -14,6 +14,5 @@ class BillingJob : Job {
         println("Run QuartzJob at $localTime")
         val billingService: BillingService = context.mergedJobDataMap["billingService"] as BillingService
         billingService.startProcess()
-
     }
 }

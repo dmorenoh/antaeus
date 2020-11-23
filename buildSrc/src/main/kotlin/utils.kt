@@ -3,11 +3,13 @@ import org.gradle.kotlin.dsl.dependencies
 import org.gradle.kotlin.dsl.kotlin
 
 const val junitVersion = "5.6.0"
+const val arrowVersion = "0.10.4"
 
 /**
  * Configures the current project as a Kotlin project by adding the Kotlin `stdlib` as a dependency.
  */
 fun Project.kotlinProject() {
+
     dependencies {
         // Kotlin libs
         "implementation"(kotlin("stdlib"))
@@ -29,6 +31,11 @@ fun Project.kotlinProject() {
         "implementation"("io.vertx:vertx-lang-kotlin-coroutines:3.9.3")
         "compile"("io.vertx:vertx-circuit-breaker:3.9.4")
         "testImplementation"("io.vertx:vertx-junit5:3.9.3")
+
+        //Arrow
+        "compile" ("io.arrow-kt:arrow-core:$arrowVersion")
+        "compile" ("io.arrow-kt:arrow-syntax:$arrowVersion")
+        "kapt"    ("io.arrow-kt:arrow-meta:$arrowVersion")
 
     }
 }

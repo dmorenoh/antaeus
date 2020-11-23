@@ -1,6 +1,7 @@
 plugins {
     application
     kotlin("jvm")
+    kotlin("kapt")
 }
 
 kotlinProject()

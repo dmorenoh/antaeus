@@ -7,24 +7,18 @@
 
 package io.pleo.antaeus.app
 
-import getCurrencyExchangeProvider
 import getPaymentProvider
-import io.pleo.antaeus.context.billing.BillingCommandHandler
 import io.pleo.antaeus.context.customer.CustomerService
-import io.pleo.antaeus.context.invoice.InvoiceCommandHandlerOld
 import io.pleo.antaeus.context.invoice.InvoiceService
-import io.pleo.antaeus.context.payment.PaymentCommandHandler
-import io.pleo.antaeus.core.messagebus.VertxCommandBus
-import io.pleo.antaeus.core.messagebus.VertxEventBus
 import io.pleo.antaeus.data.AntaeusDal
+import io.pleo.antaeus.messagebus.VertxCommandBus
+import io.pleo.antaeus.messagebus.VertxEventBus
 import io.pleo.antaeus.model.CustomerTable
 import io.pleo.antaeus.model.InvoiceTable
-
 import io.pleo.antaeus.repository.ExposedCustomerRepository
 import io.pleo.antaeus.repository.ExposedInvoiceRepository
 import io.pleo.antaeus.repository.InMemoryBillingRepository
 import io.pleo.antaeus.repository.InMemoryPaymentRepository
-
 import io.pleo.antaeus.rest.AntaeusRest
 import io.vertx.core.Vertx
 import org.jetbrains.exposed.sql.Database
@@ -76,7 +70,6 @@ fun main() {
     val customerRepository = ExposedCustomerRepository(db)
     // Get third parties
     val paymentProvider = getPaymentProvider()
-    val currencyExchangeProvider = getCurrencyExchangeProvider()
 
 
     // message bus
@@ -85,20 +78,9 @@ fun main() {
 
     // Create core services
 
-    val invoiceService = InvoiceService(repository = invoiceRepository)
+    val invoiceService = InvoiceService(repository = invoiceRepository, paymentProvider = paymentProvider)
     val customerService = CustomerService(repository = customerRepository)
 
-    val paymentCommandHandler = PaymentCommandHandler(
-            repository = paymentRepository,
-            eventBus = eventBus)
-    val invoiceCommandHandler = InvoiceCommandHandlerOld(
-            repository = invoiceRepository,
-            paymentProvider = paymentProvider,
-            currencyExchangeProvider = currencyExchangeProvider,
-            eventBus = eventBus)
-    val billingCommandHandler = BillingCommandHandler(
-            repository = billingRepository,
-            eventBus = eventBus)
 
 
 

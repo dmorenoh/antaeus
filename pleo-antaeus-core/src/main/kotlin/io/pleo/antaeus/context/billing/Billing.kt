@@ -3,27 +3,18 @@ package io.pleo.antaeus.context.billing
 import mu.KotlinLogging
 import java.util.*
 
-private val logger = KotlinLogging.logger {}
-
 
 data class Billing(val processId: UUID,
                    var status: BillingStatus = BillingStatus.STARTED,
                    val invoices: Map<Int, BillingInvoice> = mutableMapOf()
 ) {
-//    fun complete() {
-//        logger.info { "Payments size ${invoices.size}" }
-//        if (status == BillingStatus.COMPLETED)
-//            throw BillingStatusException(processId.toString())
-//        if (invoices.any { it.invoiceStatus == BillingInvoiceStatus.STARTED })
-//            throw BillingPendingPaymentsException(processId.toString())
-//        status = BillingStatus.COMPLETED
-//    }
+    private val logger = KotlinLogging.logger {}
 
     fun closeInvoice(invoiceId: Int): Billing {
         invoices[invoiceId]?.let {
-            it.invoiceStatus = BillingInvoiceStatus.PROCESSED
+            it.close()
         }
-        if (invoices.values.none { it.invoiceStatus == BillingInvoiceStatus.STARTED }){
+        if (invoices.values.none { it.invoiceStatus == BillingInvoiceStatus.STARTED }) {
             logger.info { "Closing billing" }
             this.status = BillingStatus.COMPLETED
         }
@@ -34,10 +25,15 @@ data class Billing(val processId: UUID,
     companion object {
 
         fun create(command: StartBillingCommand): Billing {
+            val processId = UUID.randomUUID()
             return Billing(
-                    processId = command.processId,
+                    processId = processId,
                     status = BillingStatus.STARTED,
-                    invoices = command.invoicesIds.map { it to BillingInvoice(command.processId, it) }.toMap())
+                    invoices = command.invoicesIds.map { it to BillingInvoice(processId, it) }.toMap())
         }
     }
+
+    fun isComplete(): Boolean = this.status == BillingStatus.COMPLETED
+
+    fun invoicesId(): List<Int> = this.invoices.values.map { it.invoiceId }
 }

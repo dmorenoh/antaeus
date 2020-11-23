@@ -6,28 +6,29 @@ import io.pleo.antaeus.context.payment.PaymentCompletedEvent
 import io.pleo.antaeus.core.messagebus.CommandBus
 import mu.KotlinLogging
 
-private val logger = KotlinLogging.logger {}
+class BillingSaga(private val commandBus: CommandBus) {
 
-class BillingSaga(
-        private val commandBus: CommandBus) {
-    fun on(event: BillingRequestedEvent) {
-        event.invoices
-                .forEach {
-                    commandBus.send(
-                            command = CreatePaymentCommand(
-                                    invoiceId = it,
-                                    processId = event.processId)
-                    )
-                }
+    private val logger = KotlinLogging.logger {}
+
+    fun on(event: BillingStartedEvent) = event.invoices
+            .forEach { invoiceId ->
+                commandBus.send(CreatePaymentCommand(invoiceId, event.billingId))
+            }
+
+
+    fun on(event: PaymentCompletedEvent) {
+        event.takeIf { it.billingId != null }
+                .let { commandBus.send(CloseBillingInvoiceCommand(event.billingId!!, event.invoiceId)) }
+//        if (event.billingId != null)
+//            commandBus.send(CloseBillingInvoiceCommand(event.billingId!!, event.invoiceId))
     }
 
     fun on(event: PaymentCanceledEvent) {
-        event.billingProcessId
-                ?.let { commandBus.send(CloseBillingInvoiceCommand(it, event.invoiceId)) }
-    }
+        logger.info { "Received payment cancelled: ${event}" }
+        if (event.billingId != null) {
+            logger.info { "About to close ${event.billingId}" }
+            commandBus.send(CloseBillingInvoiceCommand(event.billingId!!, event.invoiceId))
+        }
 
-    fun on(event: PaymentCompletedEvent) {
-        event.billingProcessId
-                ?.let { commandBus.send(CloseBillingInvoiceCommand(it, event.invoiceId)) }
     }
 }

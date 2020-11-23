@@ -1,8 +1,10 @@
-package io.pleo.antaeus.app
+package io.pleo.antaeus.app.saga
 
-import getPaymentProvider
+import io.mockk.every
+import io.mockk.mockk
 import io.pleo.antaeus.context.billing.*
-import io.pleo.antaeus.context.customer.CustomerService
+import io.pleo.antaeus.context.customer.Customer
+import io.pleo.antaeus.context.invoice.Invoice
 import io.pleo.antaeus.context.invoice.InvoiceCommandHandler
 import io.pleo.antaeus.context.invoice.InvoiceService
 import io.pleo.antaeus.context.invoice.InvoiceStatus
@@ -22,13 +24,11 @@ import io.pleo.antaeus.model.BillingsTable
 import io.pleo.antaeus.model.CustomerTable
 import io.pleo.antaeus.model.InvoiceTable
 import io.pleo.antaeus.model.PaymentTable
-import io.pleo.antaeus.repository.ExposedCustomerRepository
 import io.pleo.antaeus.repository.ExposedInvoiceRepository
 import io.pleo.antaeus.repository.InMemoryBillingRepository
 import io.pleo.antaeus.repository.InMemoryPaymentRepository
 import io.pleo.antaeus.verticles.BillingVerticle
 import io.pleo.antaeus.verticles.PaymentVerticle
-import io.pleo.antaeus.verticles.QuarzVerticle
 import io.vertx.core.Vertx
 import io.vertx.junit5.VertxExtension
 import io.vertx.junit5.VertxTestContext
@@ -43,19 +43,15 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 import org.junit.jupiter.api.extension.ExtendWith
-import org.quartz.JobKey
-import org.quartz.impl.StdSchedulerFactory
 import java.io.File
 import java.math.BigDecimal
 import java.sql.Connection
 import java.util.*
 import java.util.concurrent.TimeUnit
-import kotlin.random.Random
-
 
 @ExtendWith(VertxExtension::class)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-class AntaeusAppTest {
+class BillingSagaIntegrationTest {
 
     companion object {
         val TEN_EURO = Money(BigDecimal.TEN, Currency.EUR)
@@ -64,21 +60,16 @@ class AntaeusAppTest {
     private lateinit var billingCommandHandler: BillingCommandHandler
     private lateinit var paymentCommandHandler: PaymentCommandHandler
     private lateinit var invoiceCommandHandler: InvoiceCommandHandler
-
-    lateinit var paymentProvider: PaymentProvider
-    lateinit var invoiceService: InvoiceService
-
-
-    lateinit var commandBus: CommandBus
-    lateinit var eventBus: EventBus
+    private val paymentProvider = mockk<PaymentProvider>(relaxed = true)
+    private val billingMap = mutableMapOf<UUID, Billing?>()
     lateinit var dal: AntaeusDal
     lateinit var db: Database
-    val paymentsMap = mutableMapOf<UUID, Payment?>()
-    val billingMap = mutableMapOf<UUID, Billing?>()
-    lateinit var billingService: BillingService
-
+    private val paymentsMap = mutableMapOf<UUID, Payment?>()
+    private lateinit var billingService: BillingService
     private lateinit var billingSaga: BillingSaga
     private lateinit var paymentSaga: PaymentSaga
+    lateinit var commandBus: CommandBus
+    lateinit var eventBus: EventBus
 
     @BeforeAll
     fun init() {
@@ -100,38 +91,28 @@ class AntaeusAppTest {
                         SchemaUtils.create(*tables)
                     }
                 }
-
     }
 
     @BeforeEach
     fun setup(vertx: Vertx, testContext: VertxTestContext) {
+
         dal = AntaeusDal(db = db)
-
         val invoiceRepository = ExposedInvoiceRepository(db)
-        val customerRepository = ExposedCustomerRepository(db)
-
         val paymentRepository = InMemoryPaymentRepository(paymentsMap)
         val billingRepository = InMemoryBillingRepository(billingMap)
 
+
         commandBus = VertxCommandBus(vertx.eventBus())
         eventBus = VertxEventBus(vertx.eventBus())
-        paymentProvider = getPaymentProvider()
-        invoiceService = InvoiceService(repository = invoiceRepository, paymentProvider = paymentProvider)
-        val customerService = CustomerService(repository = customerRepository)
 
+        val invoiceService = InvoiceService(invoiceRepository, paymentProvider)
+
+        billingService = BillingService(invoiceService, commandBus)
         billingSaga = BillingSaga(commandBus)
         paymentSaga = PaymentSaga(commandBus)
-
-
-
         billingCommandHandler = BillingCommandHandler(billingRepository, eventBus)
         paymentCommandHandler = PaymentCommandHandler(paymentRepository, eventBus)
         invoiceCommandHandler = InvoiceCommandHandler(invoiceRepository, invoiceService, eventBus)
-
-        billingService = BillingService(invoiceService, commandBus)
-
-
-
 
         vertx.deployVerticle(BillingVerticle(
                 billingCommandHandler = billingCommandHandler,
@@ -143,53 +124,45 @@ class AntaeusAppTest {
                 paymentSaga = paymentSaga
         ), testContext.completing())
 
-        val scheduler = StdSchedulerFactory.getDefaultScheduler()
-        scheduler.start()
-        vertx.deployVerticle(QuarzVerticle(scheduler, JobKey("Billing Job"), "0 0/1 * 1/1 * ? *", billingService), testContext
-                .completing())
 
     }
+
 
     @Test
-    fun `should execute job`(vertx: Vertx, testContext: VertxTestContext) {
-        //given a bunch of pending invoices
-        initData()
+    fun `should process billing as complete`(vertx: Vertx,
+                                             testContext: VertxTestContext) {
+        //Given some pending invoices
+        val aCustomer = dal.createCustomer(Currency.EUR)
+
+        val invoices = createInvoice(aCustomer!!)
+
+        val invoicesToBeProcessed = invoices.map { it.id }
+        every { paymentProvider.charge(any()) } returns true
+
+        //When billing was requested to be created
+        billingService.startProcess()
         testContext.awaitCompletion(500, TimeUnit.MILLISECONDS)
         testContext.completeNow()
-        Thread.sleep(60000)
-        val currentBilling = billingMap.values.first()
-        assert(currentBilling!!.status == BillingStatus.COMPLETED)
-        assert(currentBilling.invoices.values.none { it.invoiceStatus == BillingInvoiceStatus.STARTED })
-        assert(paymentsMap.values.none { it!!.status == PaymentStatus.STARTED })
-        val paymentsCancelled = paymentsMap.values.filter { it!!.status == PaymentStatus.CANCELED }
-        val paymentsComplete = paymentsMap.values.filter { it!!.status == PaymentStatus.COMPLETED }
-        val allInvoices = dal.fetchAllInvoices()
-        val pendingInvoices = allInvoices.filter { it.status == InvoiceStatus.PENDING }
-        val paidInvoices = allInvoices.filter { it.status == InvoiceStatus.PAID }
-        assert(pendingInvoices.map { it.id }.containsAll(paymentsCancelled.map { it!!.invoiceId }))
-        assert(paidInvoices.map { it.id }.containsAll(paymentsComplete.map { it!!.invoiceId }))
+
+        //Then process all invoices
+        val billingCreated = billingMap.values.first()
+
+        assert(billingCreated != null)
+        assert(billingCreated!!.status == BillingStatus.COMPLETED)
+
+        val currentInvoices = billingCreated.invoicesId()
+        assert(currentInvoices.containsAll(invoicesToBeProcessed))
+        assert(billingCreated.invoices.values.all { it.invoiceStatus == BillingInvoiceStatus.PROCESSED })
+        assert(paymentsMap.values.all { it!!.status == PaymentStatus.COMPLETED })
+        assert(paymentsMap.values.map { it!!.invoiceId }.containsAll(billingCreated.invoicesId()))
 
     }
 
-
-    private fun initData() {
-        val customers = (1..100).mapNotNull {
-            dal.createCustomer(
-                    currency = Currency.values()[Random.nextInt(0, Currency.values().size)]
-            )
-        }
-
-        customers.forEach { customer ->
-            (1..10).forEach {
-                dal.createInvoice(
-                        amount = Money(
-                                value = BigDecimal(Random.nextDouble(10.0, 500.0)),
-                                currency = customer.currency
-                        ),
-                        customer = customer,
-                        status = if (it == 1) InvoiceStatus.PENDING else InvoiceStatus.PAID
-                )
-            }
-        }
+    private fun createInvoice(customer: Customer): List<Invoice> = (1..3).map {
+        dal.createInvoice(
+                TEN_EURO,
+                customer,
+                InvoiceStatus.PENDING) ?: throw RuntimeException("fail creating")
     }
+
 }

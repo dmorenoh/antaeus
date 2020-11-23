@@ -11,8 +11,9 @@ class InMemoryPaymentRepository(private val paymentsMap: MutableMap<UUID, Paymen
     }
 
 
-    override fun update(payment: Payment) {
+    override fun update(payment: Payment): Payment {
         paymentsMap.replace(payment.transactionId, payment)
+        return payment
     }
 
 

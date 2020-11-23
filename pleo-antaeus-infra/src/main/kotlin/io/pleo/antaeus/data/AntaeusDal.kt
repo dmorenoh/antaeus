@@ -60,6 +60,13 @@ class AntaeusDal(private val db: Database) {
         }
     }
 
+    fun fetchAllInvoices(): List<Invoice> {
+        return transaction(db) {
+            InvoiceEntity.all()
+                    .map { it.toInvoice() }
+        }
+    }
+
     fun fetchPendingInvoice(): List<Invoice> {
         // transaction(db) runs the internal query as a new database transaction.
         return transaction(db) {
