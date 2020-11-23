@@ -13,7 +13,7 @@ import org.quartz.impl.triggers.CronTriggerImpl
 
 class QuarzVerticle(private val scheduler: Scheduler,
                     private val jobKey: JobKey,
-                    var cronExpression: String,
+                    private var cronExpression: String,
                     private val billingService: BillingService) :
         AbstractVerticle() {
 

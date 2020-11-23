@@ -7,7 +7,7 @@ import io.pleo.antaeus.core.messagebus.EventBus
 import mu.KotlinLogging
 
 class InvoiceCommandHandler(private val repository: InvoiceRepository,
-                            private val invoiceService: InvoiceService,
+                            private val service: InvoiceService,
                             private val eventBus: EventBus) {
     private val logger = KotlinLogging.logger {}
 
@@ -30,7 +30,7 @@ class InvoiceCommandHandler(private val repository: InvoiceRepository,
     suspend fun handle(command: ChargeInvoiceCommand) {
         logger.info { "Charging ${command.invoiceId}" }
 
-        invoiceService.charge(command.invoiceId)
+        service.charge(command.invoiceId)
         eventBus.publish(event = InvoiceChargedEvent(command.transactionId, command.invoiceId))
     }
 
