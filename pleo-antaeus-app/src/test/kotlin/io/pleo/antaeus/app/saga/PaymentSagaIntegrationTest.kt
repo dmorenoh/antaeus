@@ -3,7 +3,9 @@ package io.pleo.antaeus.app.saga
 import io.mockk.every
 import io.mockk.mockk
 import io.pleo.antaeus.app.AntaeusAppTest
-import io.pleo.antaeus.context.invoice.InvoiceCommandHandler
+import io.pleo.antaeus.app.payment.PaymentCommandHandler
+import io.pleo.antaeus.app.payment.PaymentEventHandler
+import io.pleo.antaeus.app.verticle.PaymentVerticle
 import io.pleo.antaeus.context.invoice.InvoiceService
 import io.pleo.antaeus.context.invoice.InvoiceStatus
 import io.pleo.antaeus.context.payment.*
@@ -21,7 +23,6 @@ import io.pleo.antaeus.model.InvoiceTable
 import io.pleo.antaeus.model.PaymentTable
 import io.pleo.antaeus.repository.ExposedInvoiceRepository
 import io.pleo.antaeus.repository.InMemoryPaymentRepository
-import io.pleo.antaeus.verticles.PaymentVerticle
 import io.vertx.core.Vertx
 import io.vertx.junit5.VertxExtension
 import io.vertx.junit5.VertxTestContext
@@ -43,16 +44,17 @@ import java.util.concurrent.TimeUnit
 
 @ExtendWith(VertxExtension::class)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-class PaymentSagaTest {
+class PaymentSagaIntegrationTest {
 
     lateinit var dal: AntaeusDal
     lateinit var db: Database
     lateinit var paymentSaga: PaymentSaga
     private val paymentsMap = mutableMapOf<UUID, Payment?>()
     private val paymentProvider = mockk<PaymentProvider>(relaxed = true)
-    lateinit var invoiceCommandHandler: InvoiceCommandHandler
     lateinit var paymentCommandHandler: PaymentCommandHandler
+    lateinit var paymentEventHandler: PaymentEventHandler
     lateinit var invoiceService: InvoiceService
+    lateinit var paymentService: PaymentService
     lateinit var commandBus: CommandBus
     lateinit var eventBus: EventBus
 
@@ -89,14 +91,14 @@ class PaymentSagaTest {
         commandBus = VertxCommandBus(vertx.eventBus())
         eventBus = VertxEventBus(vertx.eventBus())
         invoiceService = InvoiceService(invoiceRepository, paymentProvider)
+        paymentService = PaymentService(invoiceRepository, paymentRepository, commandBus)
         paymentSaga = PaymentSaga(commandBus)
-        invoiceCommandHandler = InvoiceCommandHandler(invoiceRepository, invoiceService, eventBus)
-        paymentCommandHandler = PaymentCommandHandler(paymentRepository, eventBus)
 
+        paymentCommandHandler = PaymentCommandHandler(paymentService, invoiceService)
+        paymentEventHandler = PaymentEventHandler(paymentSaga)
         vertx.deployVerticle(PaymentVerticle(
                 paymentCommandHandler = paymentCommandHandler,
-                invoiceCommandHandler = invoiceCommandHandler,
-                paymentSaga = paymentSaga
+                paymentEventHandler = paymentEventHandler
         ), testContext.completing())
     }
 

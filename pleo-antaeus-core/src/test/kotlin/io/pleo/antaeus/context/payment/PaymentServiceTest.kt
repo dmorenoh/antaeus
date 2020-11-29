@@ -1,7 +1,9 @@
 package io.pleo.antaeus.context.payment
 
+import io.kotest.assertions.arrow.either.shouldBeRight
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.slot
 import io.mockk.verify
 import io.pleo.antaeus.context.customer.Customer
 import io.pleo.antaeus.context.invoice.Invoice
@@ -25,8 +27,31 @@ class PaymentServiceTest {
     }
 
     private val invoiceRepository: InvoiceRepository = mockk(relaxed = true)
+    private val paymentRepository: PaymentRepository = mockk(relaxed = true)
     private val commandBus = mockk<CommandBus>(relaxed = true)
-    private val paymentService = PaymentService(invoiceRepository, commandBus)
+    private val paymentService = PaymentService(invoiceRepository, paymentRepository, commandBus)
+
+    @Test
+    fun `should create payment when requested`() {
+        val result = runBlocking {
+            paymentService.execute(CreatePaymentCommand(1))
+        }
+
+        val paymentSlot = slot<Payment>()
+
+        verify { paymentRepository.save(payment = capture(paymentSlot)) }
+        val payment = paymentSlot.captured
+
+        assert(payment.status == PaymentStatus.STARTED)
+
+        result.shouldBeRight { event ->
+            assert(event as PaymentCreatedEvent ==
+                    PaymentCreatedEvent(payment.transactionId,
+                            payment.invoiceId,
+                            null,
+                            payment.status))
+        }
+    }
 
     @Test
     fun `should fail when no invoice found`() {

@@ -8,14 +8,18 @@
 package io.pleo.antaeus.app
 
 import getPaymentProvider
-import io.pleo.antaeus.context.billing.BillingCommandHandler
+import io.pleo.antaeus.app.billing.BillingCommandHandler
+import io.pleo.antaeus.app.billing.BillingEventHandler
+import io.pleo.antaeus.app.billing.BillingVerticle
+import io.pleo.antaeus.app.payment.PaymentCommandHandler
+import io.pleo.antaeus.app.payment.PaymentEventHandler
+import io.pleo.antaeus.app.verticle.PaymentVerticle
 import io.pleo.antaeus.context.billing.BillingSaga
 import io.pleo.antaeus.context.billing.BillingService
 import io.pleo.antaeus.context.customer.CustomerService
-import io.pleo.antaeus.context.invoice.InvoiceCommandHandler
 import io.pleo.antaeus.context.invoice.InvoiceService
-import io.pleo.antaeus.context.payment.PaymentCommandHandler
 import io.pleo.antaeus.context.payment.PaymentSaga
+import io.pleo.antaeus.context.payment.PaymentService
 import io.pleo.antaeus.data.AntaeusDal
 import io.pleo.antaeus.messagebus.VertxCommandBus
 import io.pleo.antaeus.messagebus.VertxEventBus
@@ -26,8 +30,6 @@ import io.pleo.antaeus.repository.ExposedInvoiceRepository
 import io.pleo.antaeus.repository.InMemoryBillingRepository
 import io.pleo.antaeus.repository.InMemoryPaymentRepository
 import io.pleo.antaeus.rest.AntaeusRest
-import io.pleo.antaeus.verticles.BillingVerticle
-import io.pleo.antaeus.verticles.PaymentVerticle
 import io.pleo.antaeus.verticles.QuarzVerticle
 import io.vertx.core.Vertx
 import org.jetbrains.exposed.sql.Database
@@ -90,16 +92,23 @@ fun main() {
     // Create core services
     val invoiceService = InvoiceService(repository = invoiceRepository, paymentProvider = paymentProvider)
     val customerService = CustomerService(repository = customerRepository)
-    val billingService = BillingService(invoiceService = invoiceService, commandBus = commandBus)
+    val billingService = BillingService(billingRepository = billingRepository, invoiceService = invoiceService,
+            commandBus = commandBus)
 
-    // command handlers
-    var invoiceCommandHandler = InvoiceCommandHandler(invoiceRepository, invoiceService, eventBus)
-    var paymentCommandHandler = PaymentCommandHandler(paymentRepository, eventBus)
-    var billingCommandHandler = BillingCommandHandler(billingRepository, eventBus)
+    val paymentService = PaymentService(invoiceRepository = invoiceRepository,
+            paymentRepository = paymentRepository,
+            commandBus = commandBus)
 
     // sagas
     var paymentSaga = PaymentSaga(commandBus)
     var billingSaga = BillingSaga(commandBus)
+
+    // command handlers
+    var paymentCommandHandler = PaymentCommandHandler(paymentService, invoiceService)
+    var paymentEventHandler = PaymentEventHandler(paymentSaga = paymentSaga)
+    var billingCommandHandler = BillingCommandHandler(billingService)
+    var billingEventHandler = BillingEventHandler(billingSaga = billingSaga)
+
 
     //Billing scheduler
     val scheduler = StdSchedulerFactory.getDefaultScheduler();
@@ -107,8 +116,8 @@ fun main() {
 
 
     // Verticles
-    var paymentVerticle = PaymentVerticle(paymentCommandHandler, invoiceCommandHandler, paymentSaga)
-    var billlingVerticle = BillingVerticle(billingCommandHandler, billingSaga)
+    var paymentVerticle = PaymentVerticle(paymentCommandHandler, paymentEventHandler)
+    var billlingVerticle = BillingVerticle(billingCommandHandler, billingEventHandler)
     var quarzVerticle = QuarzVerticle(scheduler, JobKey("Billing Job"), "0 0/1 * 1/1 * ? *", billingService)
 
     vertx.deployVerticle(paymentVerticle)
@@ -117,6 +126,8 @@ fun main() {
     // Create REST web service
     AntaeusRest(
             invoiceService = invoiceService,
-            customerService = customerService
+            customerService = customerService,
+            paymentService = paymentService,
+            billingService = billingService
     ).run()
 }

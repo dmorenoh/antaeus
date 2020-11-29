@@ -2,15 +2,20 @@ package io.pleo.antaeus.app.saga
 
 import io.mockk.every
 import io.mockk.mockk
+import io.pleo.antaeus.app.billing.BillingCommandHandler
+import io.pleo.antaeus.app.billing.BillingEventHandler
+import io.pleo.antaeus.app.billing.BillingVerticle
+import io.pleo.antaeus.app.payment.PaymentCommandHandler
+import io.pleo.antaeus.app.payment.PaymentEventHandler
+import io.pleo.antaeus.app.verticle.PaymentVerticle
 import io.pleo.antaeus.context.billing.*
 import io.pleo.antaeus.context.customer.Customer
 import io.pleo.antaeus.context.invoice.Invoice
-import io.pleo.antaeus.context.invoice.InvoiceCommandHandler
 import io.pleo.antaeus.context.invoice.InvoiceService
 import io.pleo.antaeus.context.invoice.InvoiceStatus
 import io.pleo.antaeus.context.payment.Payment
-import io.pleo.antaeus.context.payment.PaymentCommandHandler
 import io.pleo.antaeus.context.payment.PaymentSaga
+import io.pleo.antaeus.context.payment.PaymentService
 import io.pleo.antaeus.context.payment.PaymentStatus
 import io.pleo.antaeus.context.payment.external.PaymentProvider
 import io.pleo.antaeus.core.messagebus.CommandBus
@@ -27,8 +32,6 @@ import io.pleo.antaeus.model.PaymentTable
 import io.pleo.antaeus.repository.ExposedInvoiceRepository
 import io.pleo.antaeus.repository.InMemoryBillingRepository
 import io.pleo.antaeus.repository.InMemoryPaymentRepository
-import io.pleo.antaeus.verticles.BillingVerticle
-import io.pleo.antaeus.verticles.PaymentVerticle
 import io.vertx.core.Vertx
 import io.vertx.junit5.VertxExtension
 import io.vertx.junit5.VertxTestContext
@@ -58,8 +61,9 @@ class BillingSagaIntegrationTest {
     }
 
     private lateinit var billingCommandHandler: BillingCommandHandler
+    private lateinit var billingEventHandler: BillingEventHandler
     private lateinit var paymentCommandHandler: PaymentCommandHandler
-    private lateinit var invoiceCommandHandler: InvoiceCommandHandler
+    private lateinit var paymentEventHandler: PaymentEventHandler
     private val paymentProvider = mockk<PaymentProvider>(relaxed = true)
     private val billingMap = mutableMapOf<UUID, Billing?>()
     lateinit var dal: AntaeusDal
@@ -106,22 +110,22 @@ class BillingSagaIntegrationTest {
         eventBus = VertxEventBus(vertx.eventBus())
 
         val invoiceService = InvoiceService(invoiceRepository, paymentProvider)
+        val paymentService = PaymentService(invoiceRepository, paymentRepository, commandBus)
 
-        billingService = BillingService(invoiceService, commandBus)
+        billingService = BillingService(billingRepository, invoiceService, commandBus)
         billingSaga = BillingSaga(commandBus)
         paymentSaga = PaymentSaga(commandBus)
-        billingCommandHandler = BillingCommandHandler(billingRepository, eventBus)
-        paymentCommandHandler = PaymentCommandHandler(paymentRepository, eventBus)
-        invoiceCommandHandler = InvoiceCommandHandler(invoiceRepository, invoiceService, eventBus)
-
+        billingCommandHandler = BillingCommandHandler(billingService)
+        billingEventHandler = BillingEventHandler(billingSaga)
+        paymentCommandHandler = PaymentCommandHandler(paymentService, invoiceService)
+        paymentEventHandler = PaymentEventHandler(paymentSaga)
         vertx.deployVerticle(BillingVerticle(
                 billingCommandHandler = billingCommandHandler,
-                billingSaga = billingSaga), testContext.completing())
+                billingEventHandler = billingEventHandler), testContext.completing())
 
         vertx.deployVerticle(PaymentVerticle(
                 paymentCommandHandler = paymentCommandHandler,
-                invoiceCommandHandler = invoiceCommandHandler,
-                paymentSaga = paymentSaga
+                paymentEventHandler = paymentEventHandler
         ), testContext.completing())
 
 

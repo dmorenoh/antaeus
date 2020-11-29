@@ -3,9 +3,11 @@ package io.pleo.antaeus.repository
 import io.pleo.antaeus.context.invoice.Invoice
 import io.pleo.antaeus.context.invoice.InvoiceRepository
 import io.pleo.antaeus.context.invoice.InvoiceStatus
+import io.pleo.antaeus.core.exceptions.InvoiceNotFoundException
 import io.pleo.antaeus.entities.InvoiceEntity
 import io.pleo.antaeus.model.InvoiceTable
 import io.vertx.kotlin.coroutines.awaitBlocking
+import mu.KotlinLogging
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.transactions.transaction
@@ -13,7 +15,9 @@ import org.jetbrains.exposed.sql.update
 
 class ExposedInvoiceRepository(private val db: Database) : InvoiceRepository {
 
-    override fun update(invoice: Invoice): Invoice? {
+    private val logger = KotlinLogging.logger {}
+
+    override fun update(invoice: Invoice): Invoice {
         val rowsUpdated = transaction(db) {
             InvoiceTable
                     .update({ (InvoiceTable.id eq invoice.id) and (InvoiceTable.version eq invoice.version) }) {
@@ -23,41 +27,31 @@ class ExposedInvoiceRepository(private val db: Database) : InvoiceRepository {
                         it[version] = invoice.version + 1
                     }
         }
-        if (rowsUpdated == 0)
-            throw RuntimeException("Optimistic locking exception")
-        return load(invoice.id)
+        if (rowsUpdated == 0) {
+            logger.info { "Failed to update ${invoice.id} to status ${invoice.status}" }
+            throw RuntimeException("Not found or optimistic locking exception when updating ${invoice.id}")
+        }
+        return load(invoice.id) ?: throw InvoiceNotFoundException(invoice.id)
     }
 
-    override suspend fun updateAsync(invoice: Invoice): Invoice? {
-        return awaitBlocking {
-            update(invoice)
-        }
+    override suspend fun updateAsync(invoice: Invoice): Invoice = awaitBlocking { update(invoice) }
+
+    override fun load(id: Int): Invoice? = transaction(db) {
+        InvoiceEntity.findById(id)?.toInvoice()
     }
 
 
-    override fun load(id: Int): Invoice? {
-        return transaction(db) {
-            InvoiceEntity.findById(id)?.toInvoice()
-        }
+    override suspend fun loadAsync(id: Int): Invoice? = awaitBlocking { load(id) }
+
+
+    override fun fetchByStatus(status: InvoiceStatus): List<Invoice> = transaction(db) {
+        InvoiceEntity.find { InvoiceTable.status.eq(status.name) }
+                .map { it.toInvoice() }
     }
 
-    override suspend fun loadAsync(id: Int): Invoice? {
-        return awaitBlocking {
-            load(id)
-        }
-    }
 
-    override fun fetchByStatus(status: InvoiceStatus): List<Invoice> {
-        return transaction(db) {
-            InvoiceEntity.find { InvoiceTable.status.eq(status.name) }
-                    .map { it.toInvoice() }
-        }
-    }
-
-    override fun fetchAll(): List<Invoice> {
-        return transaction(db) {
-            InvoiceEntity.all().map { it.toInvoice() }
-        }
+    override fun fetchAll(): List<Invoice> = transaction(db) {
+        InvoiceEntity.all().map { it.toInvoice() }
     }
 
 

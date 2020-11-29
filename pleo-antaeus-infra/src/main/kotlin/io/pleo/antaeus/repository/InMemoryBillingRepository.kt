@@ -17,4 +17,6 @@ class InMemoryBillingRepository(private val billingsMap: MutableMap<UUID, Billin
     override fun load(processId: UUID): Billing? {
         return billingsMap[processId]
     }
+
+    override fun fetchAll(): List<Billing> = billingsMap.values.filterNotNull()
 }

@@ -1,6 +1,6 @@
 package io.pleo.antaeus.context.invoice
 
-import io.pleo.antaeus.core.commands.Command
+import io.pleo.antaeus.context.payment.PaymentCommand
 import java.util.*
 
-data class PayInvoiceCommand(val transactionId: UUID, val invoiceId: Int) : Command
+data class PayInvoiceCommand(val transactionId: UUID, val invoiceId: Int) : PaymentCommand

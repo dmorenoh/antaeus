@@ -17,19 +17,20 @@ data class Invoice(
     fun currency(): Currency = amount.currency
 
     fun pay(): Invoice {
-
-        if (status == InvoiceStatus.PAID)
-            throw InvalidInvoiceStatusException("Invalid")
-        if (mismatchCustomerCurrency())
-            throw CurrencyMismatchException(id, customer.id)
-
+        if (isPaid()) throw InvalidInvoiceStatusException("Invalid")
+        if (mismatchCustomerCurrency()) throw CurrencyMismatchException(id, customer.id)
         return copy(status = InvoiceStatus.PAID)
     }
 
-    fun revertPayment(): Invoice =
-        copy(status = InvoiceStatus.PENDING)
+    fun revertPayment(): Invoice = copy(status = InvoiceStatus.PENDING)
 
-    private fun mismatchCustomerCurrency(): Boolean {
-        return amount.currency != customer.currency
-    }
+    private fun mismatchCustomerCurrency(): Boolean = amount.currency != customer.currency
+
+    fun isPaid(): Boolean = status == InvoiceStatus.PAID
 }
+//
+//suspend fun Invoice.pay(): Either<Throwable, Invoice> = Either.catch {
+//    if (this.isPaid()) throw InvalidInvoiceStatusException("Invalid")
+//    if (this.mismatchCustomerCurrency()) throw CurrencyMismatchException(id, customer.id)
+//    this.copy(status = InvoiceStatus.PAID)
+//}

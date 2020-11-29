@@ -21,4 +21,6 @@ class InMemoryPaymentRepository(private val paymentsMap: MutableMap<UUID, Paymen
         return paymentsMap[transactionId]
     }
 
+    override fun fetchAll(): List<Payment> = paymentsMap.values.filterNotNull()
+
 }

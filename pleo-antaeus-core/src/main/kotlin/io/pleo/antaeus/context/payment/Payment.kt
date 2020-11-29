@@ -4,17 +4,17 @@ import java.util.*
 
 data class Payment(val transactionId: UUID,
                    val invoiceId: Int,
-                   var status: PaymentStatus? = PaymentStatus.STARTED,
+                   var status: PaymentStatus = PaymentStatus.STARTED,
                    var cancellationReason: String? = "N/A",
                    val billingId: UUID? = null) {
 
     companion object {
-
-        fun create(invoiceId: Int, billingId: UUID? = null): Payment = Payment(
+        fun create(command: CreatePaymentCommand): Payment = Payment(
                 transactionId = UUID.randomUUID(),
-                invoiceId = invoiceId,
-                billingId = billingId
+                invoiceId = command.invoiceId,
+                billingId = command.billingId
         )
+
     }
 
     fun cancel(throwable: String): Payment = copy(status = PaymentStatus.CANCELED, cancellationReason = throwable)

@@ -10,17 +10,15 @@ class BillingSaga(private val commandBus: CommandBus) {
 
     private val logger = KotlinLogging.logger {}
 
-    fun on(event: BillingStartedEvent) = event.invoices
-            .forEach { invoiceId ->
-                commandBus.send(CreatePaymentCommand(invoiceId, event.billingId))
-            }
+    fun on(event: BillingStartedEvent) = event.invoices.forEach { invoiceId ->
+        commandBus.send(CreatePaymentCommand(invoiceId, event.billingId))
+    }
 
 
     fun on(event: PaymentCompletedEvent) {
         event.takeIf { it.billingId != null }
                 .let { commandBus.send(CloseBillingInvoiceCommand(event.billingId!!, event.invoiceId)) }
-//        if (event.billingId != null)
-//            commandBus.send(CloseBillingInvoiceCommand(event.billingId!!, event.invoiceId))
+
     }
 
     fun on(event: PaymentCanceledEvent) {
