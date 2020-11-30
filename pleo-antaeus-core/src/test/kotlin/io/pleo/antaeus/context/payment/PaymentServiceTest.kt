@@ -55,7 +55,7 @@ class PaymentServiceTest {
 
     @Test
     fun `should fail when no invoice found`() {
-        every { invoiceRepository.load(INVOICE_ID) } returns null
+        every { invoiceRepository.loadBlocking(INVOICE_ID) } returns null
 
         assertThrows<InvoiceNotFoundException> {
             runBlocking {
@@ -70,7 +70,7 @@ class PaymentServiceTest {
 
         val aPaidInvoice = Invoice(INVOICE_ID, CUSTOMER, TEN_EURO, InvoiceStatus.PAID, 1)
 
-        every { invoiceRepository.load(INVOICE_ID) } returns aPaidInvoice
+        every { invoiceRepository.loadBlocking(INVOICE_ID) } returns aPaidInvoice
 
         assertThrows<InvoiceNotFoundException> {
             runBlocking {
@@ -84,7 +84,7 @@ class PaymentServiceTest {
     fun `should request create payment when invoice pending found`() {
         val aPendingInvoice = Invoice(INVOICE_ID, CUSTOMER, TEN_EURO, InvoiceStatus.PENDING, 1)
 
-        every { invoiceRepository.load(INVOICE_ID) } returns aPendingInvoice
+        every { invoiceRepository.loadBlocking(INVOICE_ID) } returns aPendingInvoice
 
         runBlocking { paymentService.payInvoice(INVOICE_ID) }
 

@@ -30,7 +30,7 @@ class InvoiceServiceTest {
 
     @Test
     fun `should fail to pay invoice when invoice does not exist`() {
-        every { runBlocking { invoiceRepository.loadAsync(1) } } returns null
+        every { runBlocking { invoiceRepository.load(1) } } returns null
 
         val result = runBlocking {
             invoiceService.execute(PayInvoiceCommand(UUID.randomUUID(), 1))
@@ -43,7 +43,7 @@ class InvoiceServiceTest {
     fun `should fail to pay invoice when status is PAID`() {
         val customer = Customer(1, Currency.EUR)
         val existingInvoice = Invoice(1, customer, TEN_EURO, InvoiceStatus.PAID, 1)
-        every { runBlocking { invoiceRepository.loadAsync(1) } } returns existingInvoice
+        every { runBlocking { invoiceRepository.load(1) } } returns existingInvoice
         val result = runBlocking {
             invoiceService.execute(PayInvoiceCommand(UUID.randomUUID(), 1))
         }
@@ -55,7 +55,7 @@ class InvoiceServiceTest {
 
         val customer = Customer(1, Currency.USD)
         val existingInvoice = Invoice(1, customer, TEN_EURO, InvoiceStatus.PENDING, 1)
-        every { runBlocking { invoiceRepository.loadAsync(1) } } returns existingInvoice
+        every { runBlocking { invoiceRepository.load(1) } } returns existingInvoice
         val result = runBlocking {
             invoiceService.execute(PayInvoiceCommand(UUID.randomUUID(), 1))
         }
@@ -67,7 +67,7 @@ class InvoiceServiceTest {
         val transactionId = UUID.randomUUID()
         val customer = Customer(1, Currency.EUR)
         val existingInvoice = Invoice(1, customer, TEN_EURO, InvoiceStatus.PENDING, 1)
-        every { runBlocking { invoiceRepository.loadAsync(1) } } returns existingInvoice
+        every { runBlocking { invoiceRepository.load(1) } } returns existingInvoice
         val result = runBlocking {
             invoiceService.execute(PayInvoiceCommand(transactionId, 1))
         }
@@ -81,7 +81,7 @@ class InvoiceServiceTest {
         val transactionId = UUID.randomUUID()
         val customer = Customer(1, Currency.USD)
         val existingInvoice = Invoice(1, customer, TEN_EURO, InvoiceStatus.PAID, 1)
-        every { runBlocking { invoiceRepository.loadAsync(1) } } returns existingInvoice
+        every { runBlocking { invoiceRepository.load(1) } } returns existingInvoice
         every { paymentProvider.charge(existingInvoice) } throws NetworkException()
         val result = runBlocking {
             invoiceService.execute(ChargeInvoiceCommand(transactionId, 1))
@@ -94,7 +94,7 @@ class InvoiceServiceTest {
         val transactionId = UUID.randomUUID()
         val customer = Customer(1, Currency.USD)
         val existingInvoice = Invoice(1, customer, TEN_EURO, InvoiceStatus.PAID, 1)
-        every { runBlocking { invoiceRepository.loadAsync(1) } } returns existingInvoice
+        every { runBlocking { invoiceRepository.load(1) } } returns existingInvoice
         every { paymentProvider.charge(existingInvoice) } returns false
         val result = runBlocking {
             invoiceService.execute(ChargeInvoiceCommand(transactionId, 1))
@@ -107,7 +107,7 @@ class InvoiceServiceTest {
         val transactionId = UUID.randomUUID()
         val customer = Customer(1, Currency.USD)
         val existingInvoice = Invoice(1, customer, TEN_EURO, InvoiceStatus.PAID, 1)
-        every { runBlocking { invoiceRepository.loadAsync(1) } } returns existingInvoice
+        every { runBlocking { invoiceRepository.load(1) } } returns existingInvoice
         every { paymentProvider.charge(existingInvoice) } returns true
         val result = runBlocking {
             invoiceService.execute(ChargeInvoiceCommand(transactionId, 1))
@@ -123,7 +123,7 @@ class InvoiceServiceTest {
         val anyReason = "any reason"
         val customer = Customer(1, Currency.USD)
         val existingInvoice = Invoice(1, customer, TEN_EURO, InvoiceStatus.PAID, 1)
-        every { runBlocking { invoiceRepository.loadAsync(1) } } returns existingInvoice
+        every { runBlocking { invoiceRepository.load(1) } } returns existingInvoice
         val result = runBlocking {
             invoiceService.execute(RevertPaymentCommand(transactionId, 1, anyReason))
         }

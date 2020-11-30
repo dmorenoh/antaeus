@@ -28,9 +28,3 @@ data class Invoice(
 
     fun isPaid(): Boolean = status == InvoiceStatus.PAID
 }
-//
-//suspend fun Invoice.pay(): Either<Throwable, Invoice> = Either.catch {
-//    if (this.isPaid()) throw InvalidInvoiceStatusException("Invalid")
-//    if (this.mismatchCustomerCurrency()) throw CurrencyMismatchException(id, customer.id)
-//    this.copy(status = InvoiceStatus.PAID)
-//}

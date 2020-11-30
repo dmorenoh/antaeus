@@ -96,14 +96,15 @@ class PaymentSagaIntegrationTest {
 
         paymentCommandHandler = PaymentCommandHandler(paymentService, invoiceService)
         paymentEventHandler = PaymentEventHandler(paymentSaga)
+
         vertx.deployVerticle(PaymentVerticle(
-                paymentCommandHandler = paymentCommandHandler,
-                paymentEventHandler = paymentEventHandler
+                commandHandler = paymentCommandHandler,
+                eventHandler = paymentEventHandler
         ), testContext.completing())
     }
 
     @Test
-    fun `should cancel payment when invoice does not exist`(vertx: Vertx, testContext: VertxTestContext) {
+    fun `should cancel payment when invoice does not exist`(testContext: VertxTestContext) {
         //When request create payment
         commandBus.send(CreatePaymentCommand(100))
         testContext.awaitCompletion(100, TimeUnit.MILLISECONDS)
@@ -111,17 +112,18 @@ class PaymentSagaIntegrationTest {
 
         val payment = paymentsMap.values.first()
         assert(payment!!.status == PaymentStatus.CANCELED)
-        assert(payment!!.cancellationReason == "InvoiceNotFoundException")
+        assert(payment.cancellationReason == "InvoiceNotFoundException")
     }
 
     @Test
-    fun `should cancel payment when invoice is paid`(vertx: Vertx, testContext: VertxTestContext) {
+    fun `should cancel payment when invoice is paid`(testContext: VertxTestContext) {
         //Given a paid invoice
         val aCustomer = dal.createCustomer(Currency.EUR)
         val invoice = dal.createInvoice(
                 AntaeusAppTest.TEN_EURO,
                 aCustomer!!,
                 InvoiceStatus.PAID)
+
         //When request create payment
         commandBus.send(CreatePaymentCommand(invoice!!.id))
         testContext.awaitCompletion(100, TimeUnit.MILLISECONDS)
@@ -135,7 +137,7 @@ class PaymentSagaIntegrationTest {
     }
 
     @Test
-    fun `should cancel payment when charge fails`(vertx: Vertx, testContext: VertxTestContext) {
+    fun `should cancel payment when charge fails`(testContext: VertxTestContext) {
         //Given a paid invoice
         val aCustomer = dal.createCustomer(Currency.EUR)
         val invoice = dal.createInvoice(
@@ -155,11 +157,11 @@ class PaymentSagaIntegrationTest {
 
         assert(invoiceResult == invoice.copy(version = 3))
         assert(payment!!.status == PaymentStatus.CANCELED)
-        assert(payment!!.cancellationReason == "NetworkException")
+        assert(payment.cancellationReason == "NetworkException")
     }
 
     @Test
-    fun `should cancel payment when charge false`(vertx: Vertx, testContext: VertxTestContext) {
+    fun `should cancel payment when charge false`(testContext: VertxTestContext) {
         //Given a paid invoice
         val aCustomer = dal.createCustomer(Currency.EUR)
         val invoice = dal.createInvoice(
@@ -167,6 +169,7 @@ class PaymentSagaIntegrationTest {
                 aCustomer!!,
                 InvoiceStatus.PENDING)
 
+        // charging is false
         every { paymentProvider.charge(any()) } returns false
 
         //When request create payment
@@ -179,11 +182,11 @@ class PaymentSagaIntegrationTest {
 
         assert(invoiceResult == invoice.copy(version = 3))
         assert(payment!!.status == PaymentStatus.CANCELED)
-        assert(payment!!.cancellationReason == "AccountBalanceException")
+        assert(payment.cancellationReason == "AccountBalanceException")
     }
 
     @Test
-    fun `should complete payment when charge true`(vertx: Vertx, testContext: VertxTestContext) {
+    fun `should complete payment when charge true`(testContext: VertxTestContext) {
         //Given a paid invoice
         val aCustomer = dal.createCustomer(Currency.EUR)
         val invoice = dal.createInvoice(

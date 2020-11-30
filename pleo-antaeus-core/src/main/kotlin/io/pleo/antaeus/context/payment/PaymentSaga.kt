@@ -6,11 +6,8 @@ import io.pleo.antaeus.context.invoice.PayInvoiceCommand
 import io.pleo.antaeus.context.invoice.PaymentRevertedEvent
 import io.pleo.antaeus.core.messagebus.CommandBus
 import io.vertx.core.eventbus.ReplyException
-import mu.KotlinLogging
 
 class PaymentSaga(private val commandBus: CommandBus) {
-
-    private val logger = KotlinLogging.logger {}
 
     suspend fun on(event: PaymentCreatedEvent) = try {
         commandBus.sendAwait(

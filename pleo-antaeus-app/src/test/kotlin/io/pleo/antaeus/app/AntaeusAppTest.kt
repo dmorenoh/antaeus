@@ -8,7 +8,6 @@ import io.pleo.antaeus.app.payment.PaymentCommandHandler
 import io.pleo.antaeus.app.payment.PaymentEventHandler
 import io.pleo.antaeus.app.verticle.PaymentVerticle
 import io.pleo.antaeus.context.billing.*
-import io.pleo.antaeus.context.customer.CustomerService
 import io.pleo.antaeus.context.invoice.InvoiceService
 import io.pleo.antaeus.context.invoice.InvoiceStatus
 import io.pleo.antaeus.context.payment.Payment
@@ -43,6 +42,7 @@ import org.jetbrains.exposed.sql.transactions.TransactionManager
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 import org.junit.jupiter.api.extension.ExtendWith
 import org.quartz.JobKey
@@ -120,30 +120,29 @@ class AntaeusAppTest {
         paymentProvider = getPaymentProvider()
         invoiceService = InvoiceService(repository = invoiceRepository, paymentProvider = paymentProvider)
         val paymentService = PaymentService(invoiceRepository, paymentRepository, commandBus)
-        val customerService = CustomerService(repository = customerRepository)
 
         billingSaga = BillingSaga(commandBus)
         paymentSaga = PaymentSaga(commandBus)
 
 
-
+        billingService = BillingService(billingRepository, invoiceService, commandBus)
         billingCommandHandler = BillingCommandHandler(billingService)
         billingEventHandler = BillingEventHandler(billingSaga)
         paymentCommandHandler = PaymentCommandHandler(paymentService, invoiceService)
         paymentEventHandler = PaymentEventHandler(paymentSaga)
 
-        billingService = BillingService(billingRepository, invoiceService, commandBus)
+
 
 
 
 
         vertx.deployVerticle(BillingVerticle(
-                billingCommandHandler = billingCommandHandler,
-                billingEventHandler = billingEventHandler), testContext.completing())
+                commandHandler = billingCommandHandler,
+                eventHandler = billingEventHandler), testContext.completing())
 
         vertx.deployVerticle(PaymentVerticle(
-                paymentCommandHandler = paymentCommandHandler,
-                paymentEventHandler = paymentEventHandler
+                commandHandler = paymentCommandHandler,
+                eventHandler = paymentEventHandler
         ), testContext.completing())
 
         val scheduler = StdSchedulerFactory.getDefaultScheduler()
@@ -153,8 +152,8 @@ class AntaeusAppTest {
 
     }
 
-    //    @Test
-    fun `should execute job`(vertx: Vertx, testContext: VertxTestContext) {
+    @Test
+    fun `should execute job`(testContext: VertxTestContext) {
         //given a bunch of pending invoices
         initData()
         testContext.awaitCompletion(500, TimeUnit.MILLISECONDS)
@@ -169,8 +168,8 @@ class AntaeusAppTest {
         val allInvoices = dal.fetchAllInvoices()
         val pendingInvoices = allInvoices.filter { it.status == InvoiceStatus.PENDING }
         val paidInvoices = allInvoices.filter { it.status == InvoiceStatus.PAID }
-//        assert(pendingInvoices.map { it.id }.containsAll(paymentsCancelled.map { it!!.invoiceId }))
-//        assert(paidInvoices.map { it.id }.containsAll(paymentsComplete.map { it!!.invoiceId }))
+        assert(pendingInvoices.map { it.id }.containsAll(paymentsCancelled.map { it!!.invoiceId }))
+        assert(paidInvoices.map { it.id }.containsAll(paymentsComplete.map { it!!.invoiceId }))
 
     }
 

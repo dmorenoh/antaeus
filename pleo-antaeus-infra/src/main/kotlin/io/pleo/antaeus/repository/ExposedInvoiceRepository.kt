@@ -17,7 +17,7 @@ class ExposedInvoiceRepository(private val db: Database) : InvoiceRepository {
 
     private val logger = KotlinLogging.logger {}
 
-    override fun update(invoice: Invoice): Invoice {
+    override fun updateBlocking(invoice: Invoice): Invoice {
         val rowsUpdated = transaction(db) {
             InvoiceTable
                     .update({ (InvoiceTable.id eq invoice.id) and (InvoiceTable.version eq invoice.version) }) {
@@ -31,17 +31,17 @@ class ExposedInvoiceRepository(private val db: Database) : InvoiceRepository {
             logger.info { "Failed to update ${invoice.id} to status ${invoice.status}" }
             throw RuntimeException("Not found or optimistic locking exception when updating ${invoice.id}")
         }
-        return load(invoice.id) ?: throw InvoiceNotFoundException(invoice.id)
+        return loadBlocking(invoice.id) ?: throw InvoiceNotFoundException(invoice.id)
     }
 
-    override suspend fun updateAsync(invoice: Invoice): Invoice = awaitBlocking { update(invoice) }
+    override suspend fun update(invoice: Invoice): Invoice = awaitBlocking { updateBlocking(invoice) }
 
-    override fun load(id: Int): Invoice? = transaction(db) {
+    override fun loadBlocking(id: Int): Invoice? = transaction(db) {
         InvoiceEntity.findById(id)?.toInvoice()
     }
 
 
-    override suspend fun loadAsync(id: Int): Invoice? = awaitBlocking { load(id) }
+    override suspend fun load(id: Int): Invoice? = awaitBlocking { loadBlocking(id) }
 
 
     override fun fetchByStatus(status: InvoiceStatus): List<Invoice> = transaction(db) {

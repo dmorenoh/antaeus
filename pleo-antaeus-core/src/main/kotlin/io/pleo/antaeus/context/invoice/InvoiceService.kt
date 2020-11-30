@@ -19,11 +19,11 @@ class InvoiceService(private val repository: InvoiceRepository,
 
     suspend fun execute(command: PayInvoiceCommand): Either<Throwable, Event> = Either.catch {
 
-        val invoice = repository.loadAsync(command.invoiceId)
+        val invoice = repository.load(command.invoiceId)
                 ?: throw InvoiceNotFoundException(command.invoiceId)
 
         invoice.pay()
-                .also { repository.updateAsync(it) }
+                .also { repository.update(it) }
                 .let {
                     InvoicePaidEvent(transactionId = command.transactionId, invoiceId = it.id, it.status)
                 }
@@ -31,7 +31,7 @@ class InvoiceService(private val repository: InvoiceRepository,
 
     suspend fun execute(command: ChargeInvoiceCommand): Either<Throwable, Event> = Either.catch {
 
-        val invoice = repository.loadAsync(command.invoiceId)
+        val invoice = repository.load(command.invoiceId)
                 ?.takeIf { invoice -> invoice.isPaid() }
                 ?: throw InvoiceNotFoundException(command.invoiceId)
 
@@ -42,11 +42,11 @@ class InvoiceService(private val repository: InvoiceRepository,
 
 
     suspend fun execute(command: RevertPaymentCommand): Either<Throwable, Event> = Either.catch {
-        val invoice = repository.loadAsync(command.invoiceId)
+        val invoice = repository.load(command.invoiceId)
                 ?: throw PaymentNotFoundException("Payment not found ${command.transactionId}")
 
         invoice.revertPayment()
-                .also { repository.updateAsync(it) }
+                .also { repository.update(it) }
                 .let {
                     PaymentRevertedEvent(
                             transactionId = command.transactionId,
@@ -65,11 +65,11 @@ class InvoiceService(private val repository: InvoiceRepository,
     }
 
     fun fetch(id: Int): Invoice {
-        return repository.load(id) ?: throw InvoiceNotFoundException(id)
+        return repository.loadBlocking(id) ?: throw InvoiceNotFoundException(id)
     }
 
     suspend fun charge(invoiceId: Int) {
-        repository.loadAsync(invoiceId)
+        repository.load(invoiceId)
                 ?.let { invoice -> paymentProvider.charge(invoice) }
                 .takeIf { it == false }
                 ?.apply { throw AccountBalanceException("No money") }

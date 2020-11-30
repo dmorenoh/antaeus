@@ -23,10 +23,12 @@ class BillingSaga(private val commandBus: CommandBus) {
 
     fun on(event: PaymentCanceledEvent) {
         logger.info { "Received payment cancelled: ${event}" }
-        if (event.billingId != null) {
-            logger.info { "About to close ${event.billingId}" }
-            commandBus.send(CloseBillingInvoiceCommand(event.billingId!!, event.invoiceId))
-        }
+        event.takeIf { it.billingId!=null }
+                .let { commandBus.send(CloseBillingInvoiceCommand(event.billingId!!, event.invoiceId)) }
+//        if (event.billingId != null) {
+//            logger.info { "About to close ${event.billingId}" }
+//            commandBus.send(CloseBillingInvoiceCommand(event.billingId!!, event.invoiceId))
+//        }
 
     }
 }

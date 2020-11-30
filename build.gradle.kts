@@ -25,5 +25,11 @@ allprojects {
 
     tasks.withType<Test> {
         useJUnitPlatform()
+        testLogging {
+            events("passed", "skipped", "failed")
+        }
+//        maxHeapSize = "1G"
+//        jvmArgs = listOf("-Xss1m", "-Xms128m", "-Xmx2g", "-XX:+UnlockExperimentalVMOptions")
     }
+
 }

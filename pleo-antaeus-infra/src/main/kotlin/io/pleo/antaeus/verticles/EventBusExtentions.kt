@@ -1,6 +1,6 @@
 package io.pleo.antaeus.verticles
 
-import io.pleo.antaeus.core.messagebus.GenericCodec
+import io.pleo.antaeus.messagebus.GenericCodec
 import io.vertx.core.eventbus.EventBus
 import kotlin.reflect.KClass
 

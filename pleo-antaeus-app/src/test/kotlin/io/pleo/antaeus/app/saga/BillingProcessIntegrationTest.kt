@@ -54,7 +54,7 @@ import java.util.concurrent.TimeUnit
 
 @ExtendWith(VertxExtension::class)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-class BillingSagaIntegrationTest {
+class BillingProcessIntegrationTest {
 
     companion object {
         val TEN_EURO = Money(BigDecimal.TEN, Currency.EUR)
@@ -101,6 +101,7 @@ class BillingSagaIntegrationTest {
     fun setup(vertx: Vertx, testContext: VertxTestContext) {
 
         dal = AntaeusDal(db = db)
+
         val invoiceRepository = ExposedInvoiceRepository(db)
         val paymentRepository = InMemoryPaymentRepository(paymentsMap)
         val billingRepository = InMemoryBillingRepository(billingMap)
@@ -120,12 +121,12 @@ class BillingSagaIntegrationTest {
         paymentCommandHandler = PaymentCommandHandler(paymentService, invoiceService)
         paymentEventHandler = PaymentEventHandler(paymentSaga)
         vertx.deployVerticle(BillingVerticle(
-                billingCommandHandler = billingCommandHandler,
-                billingEventHandler = billingEventHandler), testContext.completing())
+                commandHandler = billingCommandHandler,
+                eventHandler = billingEventHandler), testContext.completing())
 
         vertx.deployVerticle(PaymentVerticle(
-                paymentCommandHandler = paymentCommandHandler,
-                paymentEventHandler = paymentEventHandler
+                commandHandler = paymentCommandHandler,
+                eventHandler = paymentEventHandler
         ), testContext.completing())
 
 
@@ -133,18 +134,18 @@ class BillingSagaIntegrationTest {
 
 
     @Test
-    fun `should process billing as complete`(vertx: Vertx,
-                                             testContext: VertxTestContext) {
+    fun `should process billing as complete`(testContext: VertxTestContext) {
         //Given some pending invoices
         val aCustomer = dal.createCustomer(Currency.EUR)
-
-        val invoices = createInvoice(aCustomer!!)
-
+        val invoices = createInvoices(aCustomer!!)
         val invoicesToBeProcessed = invoices.map { it.id }
+
+        // and payment provider success always
         every { paymentProvider.charge(any()) } returns true
 
         //When billing was requested to be created
         billingService.startProcess()
+
         testContext.awaitCompletion(500, TimeUnit.MILLISECONDS)
         testContext.completeNow()
 
@@ -162,7 +163,7 @@ class BillingSagaIntegrationTest {
 
     }
 
-    private fun createInvoice(customer: Customer): List<Invoice> = (1..3).map {
+    private fun createInvoices(customer: Customer): List<Invoice> = (1..3).map {
         dal.createInvoice(
                 TEN_EURO,
                 customer,

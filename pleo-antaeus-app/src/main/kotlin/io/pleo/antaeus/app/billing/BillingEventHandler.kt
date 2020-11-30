@@ -8,7 +8,7 @@ import io.pleo.antaeus.core.event.Event
 
 class BillingEventHandler(private val billingSaga: BillingSaga) {
 
-    fun handleEvent(event: Event) {
+    fun handle(event: Event) {
         when (event) {
             is BillingStartedEvent -> billingSaga.on(event)
             is PaymentCompletedEvent -> billingSaga.on(event)

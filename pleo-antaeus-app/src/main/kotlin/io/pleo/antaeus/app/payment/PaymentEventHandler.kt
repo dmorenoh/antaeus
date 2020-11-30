@@ -8,7 +8,7 @@ import io.pleo.antaeus.context.payment.PaymentSaga
 import io.pleo.antaeus.core.event.Event
 
 class PaymentEventHandler(private val paymentSaga: PaymentSaga) {
-    suspend fun handleEvent(event: Event) {
+    suspend fun handle(event: Event) {
 
         when (event) {
             is PaymentCreatedEvent -> paymentSaga.on(event)

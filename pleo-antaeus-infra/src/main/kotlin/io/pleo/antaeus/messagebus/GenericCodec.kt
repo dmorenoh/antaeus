@@ -1,4 +1,4 @@
-package io.pleo.antaeus.core.messagebus
+package io.pleo.antaeus.messagebus
 
 import io.vertx.core.buffer.Buffer
 import io.vertx.core.eventbus.MessageCodec
@@ -8,7 +8,7 @@ import java.io.*
 class GenericCodec<T>(private val cls: Class<T>) : MessageCodec<T, T> {
     override fun encodeToWire(buffer: Buffer, s: T) {
         val bos = ByteArrayOutputStream()
-        var out: ObjectOutput? = null
+        var out: ObjectOutput?
         try {
             out = ObjectOutputStream(bos)
             out.writeObject(s)

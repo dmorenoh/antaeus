@@ -14,11 +14,9 @@ data class Payment(val transactionId: UUID,
                 invoiceId = command.invoiceId,
                 billingId = command.billingId
         )
-
     }
 
     fun cancel(throwable: String): Payment = copy(status = PaymentStatus.CANCELED, cancellationReason = throwable)
 
     fun complete(): Payment = copy(status = PaymentStatus.COMPLETED)
-
 }

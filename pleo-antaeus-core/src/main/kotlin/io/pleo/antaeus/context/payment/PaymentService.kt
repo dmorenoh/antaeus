@@ -16,6 +16,7 @@ class PaymentService(
     private val logger = KotlinLogging.logger {}
 
     suspend fun execute(command: CreatePaymentCommand): Either<Throwable, Event> = Either.catch {
+        logger.info { "Create payment for invoice ${command.invoiceId}" }
         Payment.create(command)
                 .also { payment -> paymentRepository.save(payment) }
                 .let { PaymentCreatedEvent(it.transactionId, it.invoiceId, it.billingId, it.status) }
@@ -29,21 +30,27 @@ class PaymentService(
                 ?.also { payment -> paymentRepository.update(payment) }
                 ?.let {
                     PaymentCompletedEvent(it.transactionId, it.invoiceId, it.billingId, it.status)
-                } ?: throw RuntimeException("fail")
+                } ?: throw PaymentNotFoundException("Payment ${command.transactionId} not found")
     }
 
     suspend fun execute(command: CancelPaymentCommand): Either<Throwable, Event> = Either.catch {
+        logger.info { "Cancel payment for invoice ${command.invoiceId}" }
+
         paymentRepository.load(command.transactionId)
                 ?.cancel(command.cancellationDescription)
                 ?.also { payment -> paymentRepository.update(payment) }
                 ?.let {
-                    PaymentCanceledEvent(it.transactionId, it.invoiceId, it.cancellationReason, it.billingId, it.status)
-                } ?: throw RuntimeException("fail")
+                    PaymentCanceledEvent(it.transactionId,
+                            it.invoiceId,
+                            it.cancellationReason,
+                            it.billingId,
+                            it.status)
+                } ?: throw PaymentNotFoundException("Payment ${command.transactionId} not found")
     }
 
     suspend fun payInvoice(invoiceId: Int) {
 
-        val invoice = invoiceRepository.load(invoiceId)
+        val invoice = invoiceRepository.loadBlocking(invoiceId)
                 ?.takeIf { it.status == InvoiceStatus.PENDING }
                 ?: throw throw InvoiceNotFoundException(invoiceId)
 
