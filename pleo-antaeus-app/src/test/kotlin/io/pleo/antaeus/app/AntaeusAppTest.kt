@@ -26,7 +26,6 @@ import io.pleo.antaeus.model.BillingsTable
 import io.pleo.antaeus.model.CustomerTable
 import io.pleo.antaeus.model.InvoiceTable
 import io.pleo.antaeus.model.PaymentTable
-import io.pleo.antaeus.repository.ExposedCustomerRepository
 import io.pleo.antaeus.repository.ExposedInvoiceRepository
 import io.pleo.antaeus.repository.InMemoryBillingRepository
 import io.pleo.antaeus.repository.InMemoryPaymentRepository
@@ -110,7 +109,6 @@ class AntaeusAppTest {
         dal = AntaeusDal(db = db)
 
         val invoiceRepository = ExposedInvoiceRepository(db)
-        val customerRepository = ExposedCustomerRepository(db)
 
         val paymentRepository = InMemoryPaymentRepository(paymentsMap)
         val billingRepository = InMemoryBillingRepository(billingMap)
@@ -124,17 +122,11 @@ class AntaeusAppTest {
         billingSaga = BillingSaga(commandBus)
         paymentSaga = PaymentSaga(commandBus)
 
-
         billingService = BillingService(billingRepository, invoiceService, commandBus)
         billingCommandHandler = BillingCommandHandler(billingService)
         billingEventHandler = BillingEventHandler(billingSaga)
         paymentCommandHandler = PaymentCommandHandler(paymentService, invoiceService)
         paymentEventHandler = PaymentEventHandler(paymentSaga)
-
-
-
-
-
 
         vertx.deployVerticle(BillingVerticle(
                 commandHandler = billingCommandHandler,
@@ -153,22 +145,34 @@ class AntaeusAppTest {
     }
 
     @Test
-    fun `should execute job`(testContext: VertxTestContext) {
+    fun `should execute job configured to be triggered every minute`(testContext: VertxTestContext) {
         //given a bunch of pending invoices
         initData()
         testContext.awaitCompletion(500, TimeUnit.MILLISECONDS)
         testContext.completeNow()
+
+        // wait 1 minute
         Thread.sleep(60000)
+
+        //Billing performed
         val currentBilling = billingMap.values.first()
+        //assert billing completed
         assert(currentBilling!!.status == BillingStatus.COMPLETED)
         assert(currentBilling.invoices.values.none { it.invoiceStatus == BillingInvoiceStatus.STARTED })
         assert(paymentsMap.values.none { it!!.status == PaymentStatus.STARTED })
+
         val paymentsCancelled = paymentsMap.values.filter { it!!.status == PaymentStatus.CANCELED }
         val paymentsComplete = paymentsMap.values.filter { it!!.status == PaymentStatus.COMPLETED }
+
+        //assert final statua of invoices on db
         val allInvoices = dal.fetchAllInvoices()
         val pendingInvoices = allInvoices.filter { it.status == InvoiceStatus.PENDING }
         val paidInvoices = allInvoices.filter { it.status == InvoiceStatus.PAID }
+
+        //assert all pending invoices where processed as cancelled
         assert(pendingInvoices.map { it.id }.containsAll(paymentsCancelled.map { it!!.invoiceId }))
+
+        //assert all paid invoices where processed as completed
         assert(paidInvoices.map { it.id }.containsAll(paymentsComplete.map { it!!.invoiceId }))
 
     }

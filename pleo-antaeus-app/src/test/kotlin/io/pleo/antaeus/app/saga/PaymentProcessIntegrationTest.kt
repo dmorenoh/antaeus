@@ -44,7 +44,7 @@ import java.util.concurrent.TimeUnit
 
 @ExtendWith(VertxExtension::class)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-class PaymentSagaIntegrationTest {
+class PaymentProcessIntegrationTest {
 
     lateinit var dal: AntaeusDal
     lateinit var db: Database

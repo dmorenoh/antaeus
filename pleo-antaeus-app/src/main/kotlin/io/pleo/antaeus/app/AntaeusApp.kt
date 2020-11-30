@@ -114,11 +114,10 @@ fun main() {
     val scheduler = StdSchedulerFactory.getDefaultScheduler();
     scheduler.start();
 
-
     // Verticles
     var paymentVerticle = PaymentVerticle(paymentCommandHandler, paymentEventHandler)
     var billlingVerticle = BillingVerticle(billingCommandHandler, billingEventHandler)
-    var quarzVerticle = QuarzVerticle(scheduler, JobKey("Billing Job"), "0 0/1 * 1/1 * ? *", billingService)
+    var quarzVerticle = QuarzVerticle(scheduler, JobKey("Billing Job"), "0 0 0 1 1/1 ? *", billingService)
 
     vertx.deployVerticle(paymentVerticle)
     vertx.deployVerticle(billlingVerticle)
