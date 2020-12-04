@@ -1,0 +1,21 @@
+@startuml
+|Payment Context|
+start
+:request PayInvoice;
+|#AntiqueWhite|Invoice Context|
+:excute (PayInvoiceCommand) ;
+If (succeed) then (no)
+|Payment Context|
+:excute (CancelPaymentCommand) ;
+else ( yes )
+|#AntiqueWhite|Invoice Context|
+:excute (ChargeInvoiceCommand) ;
+if (succeed) then (no)
+:excute (RevertInvoiceCommand) ;
+|Payment Context|
+else (yes)
+|Payment Context|
+:excute (CompletePaymentCommand) ;
+endif
+stop
+@enduml
