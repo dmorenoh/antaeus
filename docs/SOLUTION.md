@@ -28,33 +28,36 @@ And as for payment process, something like this:
 # Domain Designing
 As we could see, current solution works around two main actors in order to handle entire billing process: *Billing* and
  *Payment*. I did not forge about *Invoice*, this would be directly affected when processing its related *Payment*.
- 
+
+![img](domainContext.jpg) 
+
 ## Billing 
 This entity represents the entire billing payment (scheduled) process to be triggered on the first of the month, this
  will send to execute a payment for every pending invoice grouped under this entity. 
 
 From above diagram we have: 
 
-|Entity  | Description  |
+|Entity  |Description  |
 |--|--|
-| Billing | Created every time a new billing process is being triggered (1st of the month)  |
-| BillingInvoice | Summarized invoices reference representing the ones which will be attempted to paid along this billing process  |
+|Billing | Created every time a new billing process is being triggered (1st of the month)  |
+|BillingInvoice | Summarized invoices reference representing the ones which will be attempted to paid along this billing process  |
 
- Actions taken over this context would be expressed as Command.
+Actions taken over this context would be expressed as Command.
 
-|Command    |
-|--|--|
-|StartBillingCommand   |
-|CloseBillingInvoiceCommand  |
+```
+/** COMMANDS * */
+StartBillingCommand 
+CloseBillingInvoiceCommand 
+```
 
 Following the same idea, commands will return Events by confirming that requested action was successfully processed
 
-  |Event  |
-|--|
-  | BillingStartedEvent |
-  | BillingInvoiceCompletedEvent|
-  |BillingCompletedEvent |
-
+```
+/** EVENTS * */
+BillingStartedEvent
+BillingInvoiceCompletedEvent
+BillingCompletedEvent
+```
 
 
 ## Payment 
@@ -79,18 +82,17 @@ Again, actions over this context domain will be expressed as
 
 Considering this commands, we will have these events: 
 
-|Event  |
-|--|
-|`PaymentCreatedEvent` |
-|`InvoicePaidEvent`|
-|`InvoicePaidEvent`|
-|`InvoiceChargedEvent`|
-|`PaymentRevertedEvent`|
-|`PaymentCanceledEvent` |    
-    
-As a summary, we can consider the following diagram
+```
+/** EVENTS * */
+PaymentCreatedEvent
+InvoicePaidEvent
+InvoiceChargedEvent
+PaymentCompletedEvent
+PaymentRevertedEvent
+PaymentCanceledEvent
+```
+ 
 
-![img](domainContext.jpg) 
 
 # Architecture
 
@@ -108,7 +110,7 @@ From above workflow we have that:
   (Event) in order to manage the payment transaction as a whole
 
 
-## Code organisation
+## Code structure
 
 It's following hexagonal arquitecture where:
  - `pleo-antaeus-core`: contains all domain core business code agnostic of any framework avoiding such dependencies
@@ -121,6 +123,7 @@ It's following hexagonal arquitecture where:
  As for verification, following endpoints were created in order to check payments and billing final status. 
  
 ``` GET -  http://localhost:7000/rest/v1/payments ```
+
 ``` GET -  http://localhost:7000/rest/v1/billing ```
 
 # Technical Caveats
