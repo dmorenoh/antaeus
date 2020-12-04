@@ -38,9 +38,7 @@ From above diagram we have:
 |Entity  | Description  |
 |--|--|
 | Billing | Created every time a new billing process is being triggered (1st of the month)  |
-| BillingInvoice | Summarized invoices reference representing the ones which will be attempted to paid
- along this billing
- process  |
+| BillingInvoice | Summarized invoices reference representing the ones which will be attempted to paid along this billing process  |
 
  Actions taken over this context would be expressed as Command.
 
