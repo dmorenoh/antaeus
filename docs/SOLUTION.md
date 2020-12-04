@@ -70,23 +70,23 @@ Again, actions over this context domain will be expressed as
 
 |Command    | Description |
 |--|--|
-|CreatePaymentCommand   | Create new command |
-|PayInvoiceCommand  | Pay invoice, set invoice as PAID |
-|ChargeInvoiceCommand| Charge invoice through payment provider |
-|CompletePaymentCommand| Complete payment transaction |
-|CancelPaymentCommand| Cancel payment transaction |
-|RevertPaymentCommand| Revert payment to PENDING |   
+|`CreatePaymentCommand`   | Create new command |
+|`PayInvoiceCommand`  | Pay invoice, set invoice as PAID |
+|`ChargeInvoiceCommand`| Charge invoice through payment provider |
+|`CompletePaymentCommand`| Complete payment transaction |
+|`CancelPaymentCommand`| Cancel payment transaction |
+|`RevertPaymentCommand`| Revert payment to PENDING |   
 
 Considering this commands, we will have these events: 
 
 |Event  |
 |--|
-|PaymentCreatedEvent |
-|InvoicePaidEvent|
-|InvoicePaidEvent|
-|InvoiceChargedEvent|
-|PaymentRevertedEvent|
-|PaymentCanceledEvent |    
+|`PaymentCreatedEvent` |
+|`InvoicePaidEvent`|
+|`InvoicePaidEvent`|
+|`InvoiceChargedEvent`|
+|`PaymentRevertedEvent`|
+|`PaymentCanceledEvent` |    
     
 As a summary, we can consider the following diagram
 
@@ -98,14 +98,14 @@ As regarding what it was said, implementation is thought to be scalable, resilie
  message driven (reactive) approach is the most which addapts for this purpose. Then, following diagram explains how
   all above described interacts 
   
-![img](arcihtecture.jpg)   
+![img](architecture.jpg)   
 
-From above we have that:
- - Commands are requested as being sent through a message bus
- - A command handler consumes such command in order to perform related action over the domain (core)
- - Once this is completed, an event is sent as notification of any successful command execution
- - Saga pattern is used in order to orchestrate events and redirect them as a new command as consequence from a given
-  action performed over the core doamin.
+From above workflow we have that:
+ - When _Commands_ are requested by being sent through a message bus
+ - A _Command Handler_ consumes such command in order to perform related action over the domain (core)
+ - Once this is completed, an _Event_ is sent as notification of any successful command execution
+ - _Saga_ pattern is being used as a way to orchestrate span actions caused as consequence of any past action performed
+  (Event) in order to manage the payment transaction as a whole
 
 
 ## Code organisation
@@ -118,7 +118,7 @@ It's following hexagonal arquitecture where:
  
  # Endpoints
  
- As for verification, following endpoints were created 
+ As for verification, following endpoints were created in order to check payments and billing final status. 
  
 ``` GET -  http://localhost:7000/rest/v1/payments ```
 ``` GET -  http://localhost:7000/rest/v1/billing ```
