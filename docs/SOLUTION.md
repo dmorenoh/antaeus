@@ -79,14 +79,14 @@ Again, actions over this context domain will be expressed as
 
 Considering this commands, we will have these events: 
 
-  |Event  |
+|Event  |
 |--|
-  | PaymentCreatedEvent |
-  | InvoicePaidEvent|
-  | InvoicePaidEvent|
-    | InvoiceChargedEvent|
-    | PaymentRevertedEvent|
-  |PaymentCanceledEvent |    
+|PaymentCreatedEvent |
+|InvoicePaidEvent|
+|InvoicePaidEvent|
+|InvoiceChargedEvent|
+|PaymentRevertedEvent|
+|PaymentCanceledEvent |    
     
 As a summary, we can consider the following diagram
 
