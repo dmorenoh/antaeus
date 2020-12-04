@@ -122,3 +122,10 @@ It's following hexagonal arquitecture where:
  
 ``` GET -  http://localhost:7000/rest/v1/payments ```
 ``` GET -  http://localhost:7000/rest/v1/billing ```
+
+# Technical Caveats
+1. As explained, Saga pattern will ochestrate commands->event->next command sequences. This as asynchronous action
+. That is why async command bus are so important
+2. Vertx is used in order to define actor model pattern
+3. As general rule, I've tried to avoid any blocking call. This way the even loop is more responsive and able to
+ manage more request as comparing with blocking solution. Database access were implemented considering this.
