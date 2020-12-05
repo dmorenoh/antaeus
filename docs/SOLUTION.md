@@ -111,6 +111,20 @@ From above workflow we have that:
  - [_Saga_](https://microservices.io/patterns/data/saga.html) pattern is being used as a way to orchestrate subsequent actions caused as a result of any past action
   performed (Event) in order to manage the payment transaction as a whole
 
+## Command Handler
+
+```
+    suspend fun handle(command: Command): Either<Throwable, Event> = when (command) {
+        is CreatePaymentCommand -> paymentService.execute(command)
+        is PayInvoiceCommand -> invoiceService.execute(command)
+        is ChargeInvoiceCommand -> invoiceService.execute(command)
+        is CompletePaymentCommand -> paymentService.execute(command)
+        is RevertPaymentCommand -> invoiceService.execute(command)
+        is CancelPaymentCommand -> paymentService.execute(command)
+        else -> Either.left(RuntimeException("Invalid command ${command::class.simpleName}"))
+    }
+```
+
 # Scheduler
 Scheduler is implemented by using [Quartz](http://www.quartz-scheduler.org/) as considering it manages cron
  expressions. Thus, following cron expresion has been setup insider app runner `Antaeus.app`: 
