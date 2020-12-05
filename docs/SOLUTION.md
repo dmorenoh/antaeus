@@ -113,7 +113,7 @@ From above workflow we have that:
 
 ## Command Handler
 
-```
+```kotlin
     suspend fun handle(command: Command): Either<Throwable, Event> = when (command) {
         is CreatePaymentCommand -> paymentService.execute(command)
         is PayInvoiceCommand -> invoiceService.execute(command)
@@ -123,6 +123,19 @@ From above workflow we have that:
         is CancelPaymentCommand -> paymentService.execute(command)
         else -> Either.left(RuntimeException("Invalid command ${command::class.simpleName}"))
     }
+```
+
+## Event handler
+```kotlin
+suspend fun handle(event: Event) {
+        when (event) {
+            is PaymentCreatedEvent -> paymentSaga.on(event)
+            is InvoicePaidEvent -> paymentSaga.on(event)
+            is InvoiceChargedEvent -> paymentSaga.on(event)
+            is PaymentRevertedEvent -> paymentSaga.on(event)
+        }
+    }
+
 ```
 
 # Scheduler
