@@ -103,13 +103,27 @@ From this workflow we see that:
 ## Command Handler  
   
 ```kotlin  
- suspend fun handle(command: Command): Either<Throwable, Event> = when (command) { is CreatePaymentCommand -> paymentService.execute(command) is PayInvoiceCommand -> invoiceService.execute(command) is ChargeInvoiceCommand -> invoiceService.execute(command) is CompletePaymentCommand -> paymentService.execute(command) is RevertPaymentCommand -> invoiceService.execute(command) is CancelPaymentCommand -> paymentService.execute(command) else -> Either.left(RuntimeException("Invalid command ${command::class.simpleName}")) }
+ suspend fun handle(command: Command): Either<Throwable, Event> = when (command) {
+         is CreatePaymentCommand -> paymentService.execute(command)
+         is PayInvoiceCommand -> invoiceService.execute(command)
+         is ChargeInvoiceCommand -> invoiceService.execute(command)
+         is CompletePaymentCommand -> paymentService.execute(command)
+         is RevertPaymentCommand -> invoiceService.execute(command)
+         is CancelPaymentCommand -> paymentService.execute(command)
+         else -> Either.left(RuntimeException("Invalid command ${command::class.simpleName}"))
+     }
  ```  
   
 ## Event handler  
 ```kotlin  
-suspend fun handle(event: Event) {  
- when (event) { is PaymentCreatedEvent -> paymentSaga.on(event) is InvoicePaidEvent -> paymentSaga.on(event) is InvoiceChargedEvent -> paymentSaga.on(event) is PaymentRevertedEvent -> paymentSaga.on(event) } }  
+ suspend fun handle(event: Event) {
+        when (event) {
+            is PaymentCreatedEvent -> paymentSaga.on(event)
+            is InvoicePaidEvent -> paymentSaga.on(event)
+            is InvoiceChargedEvent -> paymentSaga.on(event)
+            is PaymentRevertedEvent -> paymentSaga.on(event)
+        }
+    }
 ```  
   
 # Scheduler  
