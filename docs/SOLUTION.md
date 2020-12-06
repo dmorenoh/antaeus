@@ -196,3 +196,9 @@ The code structure is following the hexagonal architecture where:
 1. As explained, the Saga pattern will orchestrate commands -> event -> next command sequences, as asynchronous actions. That is why the async command/event bus are so important as the event-driven engine.  
 2. Vertx is used in order to define the actor model pattern for both Billing and Payments.  
 3. As a general rule, I've tried to avoid any blocking call. This way the even loop is more responsive and able to manage more requests in comparison with any blocking solution. As a result, database accesses were implemented by considering this.
+
+# Run the app
+```
+./gradlew build
+./gradlew run  
+```
