@@ -8,7 +8,8 @@ Welcome to my solution :)
 In response to the challenge: *to build the logic that will schedule payment of the invoices on the first of the  
  month*, I initially considered a simple approach, but as multiple obstacles appeared during the process, this simple idea developed into a more robust and sophisticated solution. Thus, the following concerns were considered when solving this challenge:   
      
-   *code maintainability, scalability, efficiency, resilience, concurrency, responsiveness, effective thread (CPU) usage*  
+   * concurrency, code maintainability, scalability, efficiency, resilience, concurrency, responsiveness, effective
+    thread (CPU) usage*  
   
 To do this I referenced the following concepts:   
  - DDD, Hexagonal Architecture, Even-Driven, functional programming, Reactive, Async, NonBlocking.  
@@ -58,7 +59,9 @@ BillingCompletedEvent
   
   
 ## Payment   
- This represents the *invoice* payment transaction as a whole, considering all the steps (status) taken in order to consider a pending invoice successfully processed (paid and charged). This transaction will have a life cycle defined by the following statuses   
+ This represents the *invoice* payment transaction as a whole, considering all the steps (status) taken in order to
+  consider a pending invoice successfully processed (paid and charged). This transaction will have a life cycle
+   defined by the following statuses.  Why this? As following idempotent pattern and managing concurrency.   
    
 | Payment Status | Description  |  
 |--|--|  
