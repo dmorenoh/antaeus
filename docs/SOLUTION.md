@@ -8,7 +8,7 @@ Welcome to my solution :)
 In response to the challenge: *to build the logic that will schedule payment of the invoices on the first of the  
  month*, I initially considered a simple approach, but as multiple obstacles appeared during the process, this simple idea developed into a more robust and sophisticated solution. Thus, the following concerns were considered when solving this challenge:   
      
-   * concurrency, code maintainability, scalability, efficiency, resilience, concurrency, responsiveness, effective
+   * code maintainability, scalability, efficiency, resilience, concurrency, responsiveness, effective
     thread (CPU) usage*  
   
 To do this I referenced the following concepts:   
