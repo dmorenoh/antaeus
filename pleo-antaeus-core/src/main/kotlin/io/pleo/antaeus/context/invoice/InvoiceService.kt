@@ -11,11 +11,9 @@ import io.pleo.antaeus.context.payment.RevertPaymentCommand
 import io.pleo.antaeus.context.payment.external.PaymentProvider
 import io.pleo.antaeus.core.event.Event
 import io.pleo.antaeus.core.exceptions.InvoiceNotFoundException
-import mu.KotlinLogging
 
 class InvoiceService(private val repository: InvoiceRepository,
                      private val paymentProvider: PaymentProvider) {
-    private val logger = KotlinLogging.logger {}
 
     suspend fun execute(command: PayInvoiceCommand): Either<Throwable, Event> = Either.catch {
 
@@ -66,14 +64,5 @@ class InvoiceService(private val repository: InvoiceRepository,
 
     fun fetch(id: Int): Invoice {
         return repository.loadBlocking(id) ?: throw InvoiceNotFoundException(id)
-    }
-
-    suspend fun charge(invoiceId: Int) {
-        repository.load(invoiceId)
-                ?.let { invoice -> paymentProvider.charge(invoice) }
-                .takeIf { it == false }
-                ?.apply { throw AccountBalanceException("No money") }
-                ?.run { logger.info { "Charged!" } }
-
     }
 }

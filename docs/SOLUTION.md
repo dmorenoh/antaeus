@@ -33,7 +33,17 @@ And the payment process should follow this workflow:
 This demonstrates that the current solution works around two main actors in order to handle the entire billing process:   *Billing* and *Payment*. It is important to note here that *Invoice* was not ignored, but would be directly affected when processing its related  *Payment*.  
   
 ![img](domainContext.jpg)   
-  
+
+The entire process is triggered in this way (`BillingService`)
+```kotlin
+    fun startProcess() = invoiceService.fetchAllPending()
+        .map(Invoice::id)
+        .takeIf { it.isNotEmpty() }
+        ?.let { pendingInvoiceIds -> commandBus.send(StartBillingCommand(pendingInvoiceIds)) }
+        ?: logger.info { "Nothing to process" }
+```
+This triggers an async process described below.   
+
 ## Billing
 This entity represents the entire billing payment (scheduled) process to be triggered on the first of the month. This will make the request to execute the payment for every pending invoice grouped under this entity.  
   
@@ -136,7 +146,7 @@ The scheduler is implemented by using [Quartz](http://www.quartz-scheduler.org/)
 ```  
   
 Where `0 0 0 1 1/1 ? *` represents first day of the month.  
-  
+ 
  # Endpoints  
   As for verification, the following endpoints were created in order to check the final status of  _Payments_ and _Billing_.   
   
